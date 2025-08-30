@@ -32,6 +32,7 @@ const blogConfig = {
 
 	feed: {
 		limit: 50,
+		enableStyle: true,
 	},
 
 	// 在 URL 中隐藏的路径前缀
