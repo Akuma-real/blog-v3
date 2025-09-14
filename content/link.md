@@ -1,19 +1,43 @@
-<!-- 友链页面的“申请友链”要求 -->
+<!-- 友链页面的"申请友链"要求 -->
 
-- 申请要求：原则上与多数独立博客的友链要求一致
-  - 能够**长期更新维护**，并输出**有价值的原创内容**
-  - 可以参考 [加入开往](https://www.travellings.cn/docs/join.html) 页面的规则
-- 申请方式：在评论区留言或发送邮件到 :tip{text="hi@zhilu.cyou" copy}
-  - 标题注明 `友链申请: 你的昵称`
-  - 以 :tip[任意形式]{tip="指向信息的 URL、自然语言、编程语言"} 附上友链信息
-    ````md
-    ```ts
-    export default {
-      title: '博客名称',
-      desc: '博客描述',
-      link: '博客地址',
-      avatar: '个人头像',
-    } satisfies Friend
-    ```
-    ````
+## 🌹关于申请友链条件
+
+🍅不接受新站链接（3个月以内）
+
+🎄先友后链，申请前请先提前做好本站友情链接
+
+🍧凡内容污秽、暴力的、广告挂马的、违背社会主义核心价值观的勿扰
+
+🎯申请方式请在邮箱至 :tip{text="admin@june.ink" copy} 或者留言板留言
+
+## 👋关于申请格式
+
+本站基本信息如下，申请时请也按照相同格式：
+
+````md
+```
+- 名称：六月墨语
+- 链接：https://blog.june.ink
+- 描述：愿你历尽千帆，归来仍是少年！
+- 头像：https://blog.june.ink/images/avatar.jpg
+```
+````
+
+或者使用技术格式：
+
+````md
+```ts
+export default {
+  title: '六月墨语',
+  desc: '愿你历尽千帆，归来仍是少年！',
+  link: 'https://blog.june.ink',
+  avatar: 'https://blog.june.ink/images/avatar.jpg',
+} satisfies Friend
+```
+````
+
+## ❌无法访问或单方面取消
+
+不定时排查，无法访问或单方面取消，将会移除链接，恕不告知🧐
+
 - 信息可能会被适当修改，以保证展示效果
