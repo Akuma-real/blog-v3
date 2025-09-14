@@ -51,7 +51,7 @@ export default defineAppConfig({
 				title: '探索',
 				items: [
 					{ icon: 'ph:rss-simple-bold', text: 'Atom订阅', url: '/atom.xml' },
-					{ icon: 'ph:subway-bold', text: '开往', url: 'https://www.travellings.cn/' },
+					{ icon: 'ph:rocket-launch-bold', text: '空间穿梭', url: 'https://blogs.quest' },
 				],
 			},
 			{
@@ -65,6 +65,7 @@ export default defineAppConfig({
 				items: [
 					{ icon: 'simple-icons:nuxtdotjs', text: '主题: Clarity', url: 'https://github.com/L33Z22L11/blog-v3' },
 					{ icon: 'ph:swatches-bold', text: '主题和组件文档', url: 'https://blog.zhilu.site/theme' },
+					{ icon: 'ph:ranking-bold', text: '博阅榜', url: 'https://www.blogsclub.org/rank.html' },
 					{ icon: 'ph:certificate-bold', text: '苏ICP备 2024096744 号-2', url: 'https://beian.miit.gov.cn/' },
 				],
 			},
