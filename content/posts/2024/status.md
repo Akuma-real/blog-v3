@@ -49,10 +49,10 @@ INFO 的一个例子：
 
 ```json
 {
-	"name": "Enjoy",
-	"rtl": true,
-	"avatar": "https://cdn.linux.do/user_avatar/linux.do/mcenjoy/288/80800_2.png",
-	"desc": "一个喜欢研究的宅，欢迎各位大佬交流。<br /><a style='--n-text-color: #63e2b7; --n-bezier: cubic-bezier(.4, 0, .2, 1);' href='https://linux.do/u/mcenjoy/summary' class='n-a'>@mcenjoy [LINUX.DO]</a><br /><a class='n-a' style='--n-text-color: #63e2b7; --n-bezier: cubic-bezier(.4, 0, .2, 1);' href='https://www.nodeseek.com/space/15759'>@mcenjoy [NS]</a>"
+  "name": "Enjoy",
+  "rtl": true,
+  "avatar": "https://cdn.linux.do/user_avatar/linux.do/mcenjoy/288/80800_2.png",
+  "desc": "一个喜欢研究的宅，欢迎各位大佬交流。<br /><a style='--n-text-color: #63e2b7; --n-bezier: cubic-bezier(.4, 0, .2, 1);' href='https://linux.do/u/mcenjoy/summary' class='n-a'>@mcenjoy [LINUX.DO]</a><br /><a class='n-a' style='--n-text-color: #63e2b7; --n-bezier: cubic-bezier(.4, 0, .2, 1);' href='https://www.nodeseek.com/space/15759'>@mcenjoy [NS]</a>",
 }
 ```
 
@@ -65,18 +65,18 @@ rtl 为下方状态条由右向左显示
 这里用的 docker-compose，端口反代什么的需要自行设置，网上应该有，不行问问 GPT
 
 ```yml
-  backup:
-    image: lscr.io/linuxserver/duplicati:latest
-    environment:
-      - PUID=0
-      - PGID=0
-      - TZ=Asia/Shanghai
-      - CLI_ARGS= #optional
-    volumes:
-      - ./duplicati/config:/config # 存放duplicat的i配置文件
-      - ./duplicati/backups:/backups
-      - ../app:/source
-    restart: unless-stopped
+backup:
+  image: lscr.io/linuxserver/duplicati:latest
+  environment:
+    - PUID=0
+    - PGID=0
+    - TZ=Asia/Shanghai
+    - CLI_ARGS= # optional
+  volumes:
+    - ./duplicati/config:/config # 存放duplicat的i配置文件
+    - ./duplicati/backups:/backups
+    - ../app:/source
+  restart: unless-stopped
 ```
 
 配置完备份任务后，设置 > 默认选项 > 以文本形式编辑，注意配置你自己的 `URL` 和 `BACKUP_HTTP_TOKEN`
