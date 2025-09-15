@@ -22,7 +22,7 @@ export default function usePagination<T>(list: MaybeRefOrGetter<T[]>, options?: 
 		get: () => bindQuery ? Number(rawPage.value) : rawPage.value as number,
 		set: (val: number) => {
 			rawPage.value = bindQuery ? val.toString() : val
-		}
+		},
 	})
 
 	const totalPages = computed(() => Math.ceil(toValue(list).length / perPage) || initialPage)
