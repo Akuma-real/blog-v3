@@ -25,8 +25,6 @@ wget -O /etc/yum.repos.d/CentOS-Base.repo http://file.kangle.cccyun.cn/repo/Cent
 ```
 或
 
-
-
 ```bash
 curl -o /etc/yum.repos.d/CentOS-Base.repo http://file.kangle.cccyun.cn/repo/Centos-7.repo
 ```

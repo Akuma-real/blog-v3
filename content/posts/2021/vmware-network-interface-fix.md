@@ -26,16 +26,16 @@ VMware虚拟机在学习Linux的时候我经常会使用。然而，有时候，
 2. 删除网络管理器状态文件：
 
    ```bash
-   
+
    sudo rm /var/lib/NetworkManager/NetworkManager.state
-   
+
    ```
 3. 重新启动网络管理器服务：
 
    ```bash
-   
+
    sudo service network-manager start
-   
+
    ```
 
 ## 这些命令的作用

@@ -40,7 +40,7 @@ services:
     image: intemd/meting-api:latest
     container_name: meting
     ports:
-      - "3000:3000"
+      - '3000:3000'
     restart: always
 ```
 

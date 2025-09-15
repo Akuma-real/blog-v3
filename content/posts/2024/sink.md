@@ -62,9 +62,9 @@ draft: false
 
 1. 到KV创建一个命名空间
    ![image-20240914200856876](https://cdn.sa.net/2024/09/14/eckvpm64dGt1JVb.png)
-   
+
 1. KV名称随意
-   
+
    ![image-20240914201013546](https://cdn.sa.net/2024/09/14/vT9D4JFeAINyQ6d.png)
 
 ---
@@ -72,7 +72,7 @@ draft: false
 ### 步骤 4：KV 命名空间绑定
 
 1. 在 **KV** 中，绑定一个 KV 命名空间并将其命名为 `KV`。
-   
+
    ![image-20240914201427255](https://cdn.sa.net/2024/09/14/ql9cu2AFYZSTCIU.png)
 
 ---
@@ -80,7 +80,7 @@ draft: false
 ### 步骤 5：Workers AI 绑定（可选）
 
 1. 如果你希望使用 AI 生成短链接功能，导航到 **Workers AI Bindings**，绑定 `AI` 变量到 Workers AI Catalog。
-   
+
    ![image-20240914201551723](https://cdn.sa.net/2024/09/14/Tw7nJvy9RhsufDU.png)
 
 ---
@@ -88,7 +88,7 @@ draft: false
 ### 步骤 6：Analytics Engine 绑定
 
 1. 绑定 Cloudflare Analytics Engine。将 `ANALYTICS` 变量绑定到 Sink 数据集，并确保已为你的 Cloudflare 账户启用了 Analytics Engine Beta 版。
-   
+
    ![image-20240914201654389](https://cdn.sa.net/2024/09/14/vIVa5Ub6oG1hpDr.png)
 
 ---
@@ -96,7 +96,7 @@ draft: false
 ### 步骤 7：重新部署
 
 1. 所有绑定完成后，回到 **部署**，点击**···**，点击**重试部署**。
-   
+
    ![image-20240914201751830](https://cdn.sa.net/2024/09/14/L98oajYndEyb5AQ.png)
 
 2. 重新部署后，项目将正常运行

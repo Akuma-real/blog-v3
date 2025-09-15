@@ -100,7 +100,7 @@ unlock() {
     [ "$(nvram get boot_wait)" = "off" ]  && nvram set boot_wait=on && nvram commit
 
     [ "`uci -c /usr/share/xiao **  get xiao ** _version.version.CHANNEL`" != 'stable' ] && {
-        uci -c /usr/share/xiao **  set xiao ** _version.version.CHANNEL='stable' 
+        uci -c /usr/share/xiao **  set xiao ** _version.version.CHANNEL='stable'
         uci -c /usr/share/xiao **  commit xiao ** _version.version 2>/dev/null
     }
 
