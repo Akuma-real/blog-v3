@@ -43,6 +43,7 @@ export default defineAppConfig({
 		/** 侧边栏底部图标导航 */
 		iconNav: [
 			{ icon: 'ph:house-bold', text: '个人主页', url: blogConfig.author.homepage },
+			{ icon: 'ph:github-logo-bold', text: 'GitHub', url: 'https://github.com/Akuma-real' },
 			{ icon: 'ph:rss-simple-bold', text: 'Atom订阅', url: '/atom.xml' },
 		] satisfies NavItem[],
 		/** 页脚站点地图 */
