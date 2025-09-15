@@ -18,6 +18,9 @@ const showUndo = ref(false)
 const codeInput = useTemplateRef('code-input')
 const shikiStore = useShikiStore()
 
+// 存储 plain-shiki 实例用于清理
+let plainShikiInstance: { dispose?: () => void } | undefined
+
 const { copy, copied } = useCopy(codeInput)
 
 function undo() {
@@ -44,10 +47,17 @@ onMounted(async () => {
 	const shiki = await shikiStore.load()
 
 	await shikiStore.loadLang(language.value)
-	createPlainShiki(shiki).mount(
+	plainShikiInstance = createPlainShiki(shiki).mount(
 		codeInput.value!,
 		shikiStore.getOptions(language.value) as MountPlainShikiOptions,
 	)
+})
+
+// 清理资源
+onBeforeUnmount(() => {
+	if (plainShikiInstance?.dispose) {
+		plainShikiInstance.dispose()
+	}
 })
 </script>
 
