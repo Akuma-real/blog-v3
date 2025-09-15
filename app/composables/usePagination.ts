@@ -12,23 +12,32 @@ export default function usePagination<T>(list: MaybeRefOrGetter<T[]>, options?: 
 		bindQuery = false,
 	} = options ?? {}
 
-	const totalPages = computed(() => Math.ceil(toValue(list).length / perPage) || initialPage)
-
-	function transformPage(val: string) {
-		const page = Number(val)
-		return page >= 1 && page <= totalPages.value ? page : initialPage
-	}
-
-	const page = bindQuery
-		? useRouteQuery(bindQuery, initialPage.toString(), { transform: transformPage, mode: 'push' })
+	// 创建页码 ref，根据是否绑定查询参数决定类型
+	const rawPage = bindQuery
+		? useRouteQuery(bindQuery, initialPage.toString(), { mode: 'push' })
 		: ref(initialPage)
 
-	const listPaged = computed(() => {
-		const start = (page.value - 1) * perPage
-		return toValue(list).slice(start, start + perPage)
+	// 确保返回的 page 始终是数字类型
+	const page = computed({
+		get: () => bindQuery ? Number(rawPage.value) : rawPage.value as number,
+		set: (val: number) => {
+			rawPage.value = bindQuery ? val.toString() : val
+		}
 	})
 
-	// 不应在此处 watch list
+	const totalPages = computed(() => Math.ceil(toValue(list).length / perPage) || initialPage)
+
+	// 验证页码范围
+	watch([page, totalPages], ([newPage, newTotal]) => {
+		if (newPage < 1 || newPage > newTotal) {
+			page.value = initialPage
+		}
+	}, { immediate: true })
+
+	const listPaged = computed(() => {
+		const start = (toValue(page) - 1) * perPage
+		return toValue(list).slice(start, start + perPage)
+	})
 
 	return {
 		totalPages,
