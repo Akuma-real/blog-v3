@@ -2,6 +2,7 @@
 import type { CircleData } from '~/types/circle'
 
 const appConfig = useAppConfig()
+const initialNow = useInitialNow()
 
 // 侧边栏配置
 const layoutStore = useLayoutStore()
@@ -37,10 +38,17 @@ useSeoMeta({
 })
 
 // 最近更新时间文案
+function formatCircleDate(value?: string | number | Date) {
+	if (!value)
+		return ''
+	const date = typeof value === 'string' || typeof value === 'number' ? new Date(value) : value
+	return getPostDate(date, initialNow.value)
+}
+
 const lastUpdated = computed(() => {
 	if (!circleData.value?.statistical_data?.last_updated_time)
 		return ''
-	return getPostDate(new Date(circleData.value.statistical_data.last_updated_time))
+	return formatCircleDate(circleData.value.statistical_data.last_updated_time)
 })
 </script>
 
@@ -147,7 +155,7 @@ const lastUpdated = computed(() => {
 								/>
 								<div class="article-meta">
 									<span class="article-author">{{ article.author }}</span>
-									<time class="article-time">{{ getPostDate(new Date(article.updated || article.created)) }}</time>
+									<time class="article-time">{{ formatCircleDate(article.updated || article.created) }}</time>
 								</div>
 								<span class="article-floor">#{{ article.floor }}</span>
 							</div>

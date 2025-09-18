@@ -5,6 +5,7 @@ defineOptions({ inheritAttrs: false })
 const props = defineProps<ArticleProps>()
 
 const appConfig = useAppConfig()
+const initialNow = useInitialNow()
 
 const categoryLabel = computed(() => props.categories?.[0])
 const categoryIcon = computed(() => getCategoryIcon(categoryLabel.value))
@@ -12,6 +13,10 @@ const categoryIcon = computed(() => getCategoryIcon(categoryLabel.value))
 const shareText = `【${appConfig.title}】${props.title}\n\n${
 	props.description ? `${props.description}\n\n` : ''}${
 	new URL(props.path!, appConfig.url).href}`
+
+const createdAtText = computed(() => getPostDate(props.date, initialNow.value))
+const updatedAtText = computed(() => getPostDate(props.updated, initialNow.value))
+const showUpdated = computed(() => isTimeDiffSignificant(props.date, props.updated, 0.999, initialNow.value))
 
 const { copy, copied } = useCopy(shareText)
 </script>
@@ -37,16 +42,16 @@ const { copy, copied } = useCopy(shareText)
 				:datetime="getIsoDatetime(date)"
 			>
 				<Icon name="ph:calendar-dots-bold" />
-				{{ getPostDate(props.date) }}
+				{{ createdAtText }}
 			</time>
 
 			<time
-				v-if="isTimeDiffSignificant(date, updated, .999)"
+				v-if="showUpdated"
 				v-tip="`修改于 ${getLocaleDatetime(props.updated)}`"
 				:datetime="getIsoDatetime(updated)"
 			>
 				<Icon name="ph:calendar-plus-bold" />
-				{{ getPostDate(props.updated) }}
+				{{ updatedAtText }}
 			</time>
 
 			<span v-if="categoryLabel">

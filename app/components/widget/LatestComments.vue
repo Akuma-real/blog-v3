@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const appConfig = useAppConfig()
+const initialNow = useInitialNow()
 
 type RecentComment = {
   avatar?: string
@@ -49,7 +50,7 @@ function getTime(item: RecentComment) {
   const t = item.time || item.created
   if (!t) return ''
   try {
-    return getPostDate(new Date(t))
+    return getPostDate(new Date(t), initialNow.value)
   }
   catch {
     return ''

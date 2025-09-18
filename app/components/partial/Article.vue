@@ -4,8 +4,11 @@ import type ArticleProps from '~/types/article'
 const props = defineProps<{ useUpdated?: boolean } & ArticleProps>()
 
 const appConfig = useAppConfig()
+const initialNow = useInitialNow()
 
-const showAllDate = isTimeDiffSignificant(props.date, props.updated)
+const showAllDate = computed(() => isTimeDiffSignificant(props.date, props.updated, 0.6, initialNow.value))
+const publishedDateText = computed(() => getPostDate(props.date, initialNow.value))
+const updatedDateText = computed(() => getPostDate(props.updated, initialNow.value))
 
 const categoryLabel = computed(() => props.categories?.[0])
 const categoryColor = computed(() => appConfig.article.categories[categoryLabel.value!]?.color)
@@ -31,7 +34,7 @@ const categoryIcon = computed(() => getCategoryIcon(categoryLabel.value))
 				:title="getLocaleDatetime(date)"
 			>
 				<Icon name="ph:calendar-dots-bold" />
-				{{ getPostDate(date) }}
+				{{ publishedDateText }}
 			</time>
 
 			<time
@@ -41,7 +44,7 @@ const categoryIcon = computed(() => getCategoryIcon(categoryLabel.value))
 				:title="getLocaleDatetime(updated)"
 			>
 				<Icon name="ph:calendar-plus-bold" />
-				{{ getPostDate(props.updated) }}
+				{{ updatedDateText }}
 			</time>
 
 			<!-- 带查询参数时会水合错误 -->

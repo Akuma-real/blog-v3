@@ -11,6 +11,7 @@ const { data: surrounds } = await useAsyncData(
 )
 
 const [prev = null, next = null] = surrounds.value ?? []
+const initialNow = useInitialNow()
 
 const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	post: ArticleProps | null
@@ -21,6 +22,12 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 }>({
 	inheritAttrs: false,
 })
+
+function getSurroundDate(post: ArticleProps | null) {
+	if (!post?.date)
+		return ''
+	return getPostDate(post.date, initialNow.value)
+}
 </script>
 
 <template>
@@ -31,7 +38,7 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 			<strong class="title" :class="getPostTypeClassName(post?.type)">
 				{{ post?.title || fallbackText }}
 			</strong>
-			<time v-if="post" :datetime="getIsoDatetime(post.date)">{{ getPostDate(post.date) }}</time>
+			<time v-if="post" :datetime="getIsoDatetime(post.date)">{{ getSurroundDate(post) }}</time>
 		</div>
 	</ZRawLink>
 </DefineTemplate>

@@ -6,6 +6,12 @@ import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 
 defineProps<{ list: ArticleProps[] }>()
 
+const initialNow = useInitialNow()
+
+function getSlidePostDate(date?: string | Date) {
+	return getPostDate(date, initialNow.value)
+}
+
 const [emblaRef, emblaApi] = emblaCarouselVue({
 	skipSnaps: true,
 	loop: true,
@@ -47,7 +53,7 @@ useEventListener(emblaRef, 'wheel', (e) => {
 						{{ article.title }}
 					</div>
 					<div class="desc">
-						{{ getPostDate(article.date) }}
+						{{ getSlidePostDate(article.date) }}
 					</div>
 				</div>
 			</ZRawLink>

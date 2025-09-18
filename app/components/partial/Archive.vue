@@ -7,6 +7,7 @@ const props = defineProps<{
 	useUpdated?: boolean
 } & ArticleProps>()
 
+const initialNow = useInitialNow()
 const mainDate = computed(() => props.useUpdated ? props.updated : props.date)
 const dateLabel = computed(() => mainDate.value
 	? format(new Date(mainDate.value), 'MM-dd')
@@ -14,6 +15,7 @@ const dateLabel = computed(() => mainDate.value
 const auxDateLabel = computed(() => props.date
 	? format(new Date(props.date), isSameYear(props.updated, props.date) ? 'MM-dd' : 'yyyy-MM-dd')
 	: '')
+const showAuxDate = computed(() => props.useUpdated && isTimeDiffSignificant(props.date, props.updated, 0.6, initialNow.value))
 </script>
 
 <template>
@@ -23,7 +25,7 @@ const auxDateLabel = computed(() => props.date
 		<span class="article-title">
 			{{ title }}
 		</span>
-		<time v-if="useUpdated && isTimeDiffSignificant(date, updated)" class="aux-date" :datetime="getLocaleDatetime(date)" :title="getLocaleDatetime(date)">
+		<time v-if="showAuxDate" class="aux-date" :datetime="getLocaleDatetime(date)" :title="getLocaleDatetime(date)">
 			&nbsp;{{ auxDateLabel }}</time>
 		<NuxtImg v-if="image" class="article-cover" :src="image" :alt="title" loading="lazy" />
 	</ZRawLink>
