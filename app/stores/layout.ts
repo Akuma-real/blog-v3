@@ -11,6 +11,7 @@ export const useLayoutStore = defineStore('layout', () => {
 	const isAnyOpen = computed(() => Object.values(open.value).some(Boolean))
 
 	const asideWidgets = ref<WidgetName[]>([])
+	const baseAsideWidgets: WidgetName[] = ['visitor-ip']
 
 	const closeAll = () => {
 		Object.keys(open.value).forEach((key) => {
@@ -25,8 +26,10 @@ export const useLayoutStore = defineStore('layout', () => {
 	}
 
 	const setAside = (widgets?: WidgetName[]) => {
-		if (widgets)
-			asideWidgets.value = widgets ?? []
+		if (widgets === undefined)
+			return
+		const nextWidgets = [...new Set([...baseAsideWidgets, ...widgets])] as WidgetName[]
+		asideWidgets.value = nextWidgets
 	}
 
 	const isOpen = (key: LayoutSection) => open.value[key]
