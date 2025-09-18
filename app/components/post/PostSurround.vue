@@ -18,7 +18,7 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	icon: string
 	fallbackIcon: string
 	fallbackText: string
-	alignRight?: boolean
+	alignEnd?: boolean
 }>({
 	inheritAttrs: false,
 })
@@ -31,8 +31,8 @@ function getSurroundDate(post: ArticleProps | null) {
 </script>
 
 <template>
-<DefineTemplate v-slot="{ post, icon, fallbackIcon, fallbackText, alignRight }">
-	<ZRawLink :to="post?.path" class="surround-link" :align-right="alignRight">
+<DefineTemplate v-slot="{ post, icon, fallbackIcon, fallbackText, alignEnd }">
+	<ZRawLink :to="post?.path" class="surround-link" :align-end>
 		<Icon :class="{ 'rtl-flip': post }" :name="post ? icon : fallbackIcon" />
 		<div class="surround-text">
 			<strong class="title" :class="getPostTypeClassName(post?.type)">
@@ -43,7 +43,7 @@ function getSurroundDate(post: ArticleProps | null) {
 	</ZRawLink>
 </DefineTemplate>
 
-<div v-if="prev || next" class="surround-post">
+<div v-if="prev || next" class="surround-post" dir="ltr">
 	<ReuseTemplate
 		:post="next" icon="solar:rewind-back-bold-duotone"
 		fallback-icon="solar:document-add-bold-duotone" fallback-text="新故事即将发生"
@@ -51,7 +51,7 @@ function getSurroundDate(post: ArticleProps | null) {
 	<ReuseTemplate
 		:post="prev" icon="solar:rewind-forward-bold-duotone"
 		fallback-icon="solar:reel-bold-duotone" fallback-text="已抵达博客尽头"
-		align-right
+		align-end
 	/>
 </div>
 </template>
@@ -75,10 +75,10 @@ function getSurroundDate(post: ArticleProps | null) {
 		user-select: none;
 	}
 
-	&[align-right] {
+	&[align-end] {
 		// direction: rtl 会导致末尾标点居左
 		flex-direction: row-reverse;
-		text-align: right;
+		text-align: end;
 	}
 
 	> .surround-text {
@@ -104,7 +104,7 @@ function getSurroundDate(post: ArticleProps | null) {
 			transform: translateX(-1em);
 		}
 
-		&[align-right] > .surround-text {
+		&[align-end] > .surround-text {
 			transform: translateX(1em);
 		}
 
