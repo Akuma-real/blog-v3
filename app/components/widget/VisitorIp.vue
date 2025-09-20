@@ -30,7 +30,12 @@ const { data: ipInfo, pending, error } = useAsyncData<IpResponse>(
 )
 
 const countryDisplay = computed(() => ipInfo.value?.geo?.countryName || '')
-const displayCity = computed(() => ipInfo.value?.geo?.cityName || '')
+const displayCity = computed(() => {
+	const raw = ipInfo.value?.geo?.cityName?.trim() || ''
+	const lowered = raw.toLowerCase()
+	if (!raw || lowered === 'unknown' || lowered === 'n/a' || raw === '-') return ''
+	return raw
+})
 const displayRegion = computed(() => ipInfo.value?.geo?.regionName || '')
 
 const locationLabel = computed(() => displayCity.value || displayRegion.value || countryDisplay.value || '世界')
