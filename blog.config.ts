@@ -88,7 +88,7 @@ export const myFeed: FeedEntry = {
 	feed: new URL('/atom.xml', blogConfig.url).toString(),
 	icon: blogConfig.favicon,
 	avatar: blogConfig.author.avatar,
-	archs: ['Nuxt', 'Vercel'],
+	archs: ['Nuxt', '国内 CDN'],
 	date: blogConfig.timeEstablished,
 	comment: '这是我自己',
 }
