@@ -19,7 +19,7 @@ interface IpResponse {
 	clientIp: string
 }
 
-const { data: ipInfo, pending, error } = useAsyncData<IpResponse>(
+const { data: ipInfo, error } = useAsyncData<IpResponse>(
 	'widget-visitor-ip',
 	() => $fetch<IpResponse>('https://ip.anye.xyz/json'),
 	{
@@ -33,7 +33,8 @@ const countryDisplay = computed(() => ipInfo.value?.geo?.countryName || '')
 const displayCity = computed(() => {
 	const raw = ipInfo.value?.geo?.cityName?.trim() || ''
 	const lowered = raw.toLowerCase()
-	if (!raw || lowered === 'unknown' || lowered === 'n/a' || raw === '-') return ''
+	if (!raw || lowered === 'unknown' || lowered === 'n/a' || raw === '-')
+		return ''
 	return raw
 })
 const displayRegion = computed(() => ipInfo.value?.geo?.regionName || '')
