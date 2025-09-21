@@ -28,7 +28,7 @@ export default defineEventHandler(async (event): Promise<ShuoResponse> => {
 
 	try {
 		// 参考 https://memo.june.ink/swagger/index.html → /api/echo/page
-		const remote = await $fetch<{ code?: number; msg?: string; data?: { total?: number; items?: ShuoItem[] } }>('https://memo.june.ink/api/echo/page', {
+		const remote = await $fetch<{ code?: number, msg?: string, data?: { total?: number, items?: ShuoItem[] } }>('https://memo.june.ink/api/echo/page', {
 			query: { page, pageSize },
 		})
 
