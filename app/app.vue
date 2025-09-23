@@ -44,7 +44,8 @@ aside {
 
 	// 若设置的是 max-width，则内部 main 宽度为 fit-content，可能无法撑满
 	// 此时即使设置 flex-grow，也会影响 #sidebar 无法正确 shrink
-	width: $breakpoint-widescreen;
+	// 小屏使用 100% 宽度，大屏限制为宽屏断点，避免移动端横向溢出
+	width: min(100%, $breakpoint-widescreen);
 	min-width: 0; // 解决父级 flexbox 设置 justify-content: center 时溢出左侧消失的问题
 
 	// 此处不建议给内容设置 padding
