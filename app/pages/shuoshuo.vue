@@ -304,9 +304,6 @@ function formatExtensionUrl(ext?: string, type?: string) {
 				</div>
 			</div>
 		</div>
-			</div>
-		</div>
-
 		<!-- 错误状态 -->
 		<div v-else-if="error" class="shuo-error">
 			<ZError>
@@ -540,10 +537,10 @@ function formatExtensionUrl(ext?: string, type?: string) {
 }
 
 .shuo-content {
+	overflow-wrap: anywhere;
 	line-height: 1.8;
 	white-space: pre-wrap;
-	word-break: break-word;
-	overflow-wrap: anywhere;
+	word-break: normal;
 }
 
 .shuo-music {
