@@ -84,6 +84,117 @@ function getNeteaseEmbed(url?: string) {
 	}
 }
 
+// ========== meting-js / APlayer 集成 ==========
+const METING_API = 'https://meting.qjqq.cn/?server=:server&type=:type&id=:id'
+const aplayerReady = ref(false)
+
+function addLinkOnce(id: string, href: string) {
+	if (document.getElementById(id)) return
+	const link = document.createElement('link')
+	link.id = id
+	link.rel = 'stylesheet'
+	link.href = href
+	document.head.appendChild(link)
+}
+
+function loadScriptOnce(id: string, src: string) {
+	return new Promise<void>((resolve, reject) => {
+		const existed = document.getElementById(id) as HTMLScriptElement | null
+		if (existed) {
+			if ((existed as any)._loaded) return resolve()
+			existed.addEventListener('load', () => resolve())
+			existed.addEventListener('error', () => reject(new Error(`load fail: ${src}`)))
+			return
+		}
+		const s = document.createElement('script')
+		s.id = id
+		s.src = src
+		s.defer = true
+		;(s as any)._loaded = false
+		s.onload = () => { (s as any)._loaded = true; resolve() }
+		s.onerror = () => reject(new Error(`load fail: ${src}`))
+		document.body.appendChild(s)
+	})
+}
+
+async function ensureMetingAssets() {
+	if (!import.meta.client) return
+	const cssCdnList = [
+		'https://cdn.staticfile.org/aplayer/1.10.1/APlayer.min.css',
+		'https://unpkg.com/aplayer/dist/APlayer.min.css',
+		'https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css',
+	]
+	const jsAPlayerList = [
+		'https://cdn.staticfile.org/aplayer/1.10.1/APlayer.min.js',
+		'https://unpkg.com/aplayer/dist/APlayer.min.js',
+		'https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js',
+	]
+	const jsMetingList = [
+		'https://cdn.staticfile.org/meting/2.0.1/Meting.min.js',
+		'https://unpkg.com/meting@2/dist/Meting.min.js',
+		'https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js',
+	]
+	async function tryList(id: string, list: string[], isCss = false) {
+		for (const url of list) {
+			try {
+				if (isCss) addLinkOnce(id, url)
+				else await loadScriptOnce(id, url)
+				return true
+			}
+			catch (e) {
+				console.warn(`[meting] 资源加载失败，尝试下一个: ${url}`, e)
+			}
+		}
+		return false
+	}
+	const cssOk = await tryList('aplayer-css', cssCdnList, true)
+	const js1Ok = await tryList('aplayer-js', jsAPlayerList)
+	const js2Ok = await tryList('meting-js', jsMetingList)
+	aplayerReady.value = cssOk && js1Ok && js2Ok
+	if (!aplayerReady.value)
+		console.error('[meting] 资源加载失败（全部CDN不可用）')
+}
+
+onMounted(() => {
+	ensureMetingAssets()
+})
+
+// 解析音乐分享链接 → { server, type, id }
+function parseMusicURL(url?: string): { server: string; type: string; id: string } | null {
+	if (!url) return null
+	try {
+		const normalized = url.replace('#/', '/')
+		const u = new URL(normalized.startsWith('http') ? normalized : `https:${normalized.startsWith('//') ? normalized : '//' + normalized}`)
+		const h = u.hostname
+		const p = u.pathname
+		// 网易云
+		if (h.includes('music.163.com')) {
+			let type = 'song'
+			if (p.includes('/playlist')) type = 'playlist'
+			else if (p.includes('/album')) type = 'album'
+			const id = u.searchParams.get('id') || ''
+			return id ? { server: 'netease', type, id } : null
+		}
+		// QQ 音乐（简易识别）
+		if (h.includes('y.qq.com') || h.includes('qq.com')) {
+			let id = u.searchParams.get('songmid') || ''
+			if (!id) {
+				const m = p.match(/songDetail\/([\w]+)/i) || p.match(/song\/([\w]+)/i)
+				if (m) id = m[1]
+			}
+			return id ? { server: 'tencent', type: 'song', id } : null
+		}
+		// 裸数字 → 默认按网易云单曲
+		if (/^\d+$/.test(url)) return { server: 'netease', type: 'song', id: url }
+		return null
+	}
+	catch {
+		// 非URL或无法解析，允许裸数字兜底
+		if (/^\d+$/.test(url)) return { server: 'netease', type: 'song', id: url }
+		return null
+	}
+}
+
 // 判定 B 站链接或 ID（支持 BV/av、b23 短链、bilibili 域名）
 function isBilibili(type?: string, ext?: string) {
 	if (!ext)
@@ -141,7 +252,8 @@ function getBilibiliEmbed(ext?: string) {
 		}
 	}
 	if (bvid)
-		return `https://player.bilibili.com/player.html?bvid=${bvid}&autoplay=0&high_quality=1&danmaku=0`
+		// 参考 Ech0 前端：使用移动端黑板播放器，减少跳转与边距
+		return `https://www.bilibili.com/blackboard/html5mobileplayer.html?bvid=${bvid}&as_wide=1&high_quality=1&danmaku=0`
 	if (aid)
 		return `https://player.bilibili.com/player.html?aid=${aid}&autoplay=0&high_quality=1&danmaku=0`
 	return ''
@@ -218,16 +330,32 @@ function formatExtensionUrl(ext?: string, type?: string) {
 
 				<div class="shuo-content" v-text="item.content" />
 
-				<!-- 音乐扩展（网易云） -->
+				<!-- 音乐扩展（APlayer / meting-js） -->
 				<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
-					<iframe
-						:title="`音乐 ${item.id}`"
-						:src="getNeteaseEmbed(item.extension)"
-						width="100%"
-						height="86"
-						frameborder="0"
-						allow="autoplay; encrypted-media"
-					></iframe>
+					<div v-if="aplayerReady && parseMusicURL(item.extension)">
+						<meting-js
+							:api="METING_API"
+							:server="parseMusicURL(item.extension)!.server"
+							:type="parseMusicURL(item.extension)!.type"
+							:id="parseMusicURL(item.extension)!.id"
+							preload="none"
+							fixed="false"
+							loop="none"
+							order="list"
+							mini="false"
+						/>
+					</div>
+					<div v-else>
+						<!-- Fallback：网易云外链播放器，避免空白 -->
+						<iframe
+							:title="`音乐 ${item.id}`"
+							:src="getNeteaseEmbed(item.extension)"
+							width="100%"
+							height="86"
+							frameborder="0"
+							allow="autoplay; encrypted-media"
+						></iframe>
+					</div>
 				</div>
 
 				<!-- B 站视频扩展 -->

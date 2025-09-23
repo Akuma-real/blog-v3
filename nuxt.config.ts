@@ -7,6 +7,11 @@ import redirectList from './redirects.json'
 
 // 此处配置无需修改
 export default defineNuxtConfig({
+	vue: {
+		compilerOptions: {
+			isCustomElement: (tag) => ['meting-js'].includes(tag),
+		},
+	},
 	app: {
 		head: {
 			meta: [
