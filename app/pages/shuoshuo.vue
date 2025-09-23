@@ -445,6 +445,7 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	display: flex;
 	align-items: flex-start;
 	gap: 0.75rem;
+	min-width: 0; // 避免 Flex 容器本身因子项最小宽度导致超出
 }
 
 .feed-avatar {
@@ -461,6 +462,7 @@ function formatExtensionUrl(ext?: string, type?: string) {
 
 .feed-content {
 	flex: 1;
+	min-width: 0; // 关键：允许在小屏下收缩，避免右侧内容撑出卡片
 }
 
 .shuo-timeline {
@@ -540,6 +542,8 @@ function formatExtensionUrl(ext?: string, type?: string) {
 .shuo-content {
 	line-height: 1.8;
 	white-space: pre-wrap;
+	word-break: break-word;
+	overflow-wrap: anywhere;
 }
 
 .shuo-music {
