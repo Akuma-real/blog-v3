@@ -9,7 +9,7 @@ import redirectList from './redirects.json'
 export default defineNuxtConfig({
 	vue: {
 		compilerOptions: {
-			isCustomElement: (tag) => ['meting-js'].includes(tag),
+			isCustomElement: tag => ['meting-js'].includes(tag),
 		},
 	},
 	app: {
@@ -19,6 +19,7 @@ export default defineNuxtConfig({
 				// 此处为元数据的生成器标识，不建议修改
 				{ 'name': 'generator', 'content': packageJson.name, 'data-github-repo': packageJson.homepage, 'data-version': packageJson.version },
 				{ name: 'mobile-web-app-capable', content: 'yes' },
+				{ 'http-equiv': 'Content-Security-Policy', 'content': 'upgrade-insecure-requests' },
 			],
 			link: [
 				{ rel: 'icon', href: blogConfig.favicon },

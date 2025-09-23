@@ -77,7 +77,7 @@ function getNeteaseEmbed(url?: string) {
 		const normalized = url.replace('#/', '/')
 		const parsed = new URL(normalized.startsWith('http') ? normalized : `https://music.163.com${normalized}`)
 		const id = parsed.searchParams.get('id')
-		return id ? `https://music.163.com/outchain/player?type=2&id=${id}&auto=0&height=66` : ''
+		return id ? `https://music.163.com/m/outchain/player?type=2&id=${id}&auto=0&height=66` : ''
 	}
 	catch {
 		return ''
@@ -89,7 +89,8 @@ const METING_API = 'https://meting.qjqq.cn/?server=:server&type=:type&id=:id'
 const aplayerReady = ref(false)
 
 function addLinkOnce(id: string, href: string) {
-	if (document.getElementById(id)) return
+	if (document.getElementById(id))
+		return
 	const link = document.createElement('link')
 	link.id = id
 	link.rel = 'stylesheet'
@@ -101,7 +102,8 @@ function loadScriptOnce(id: string, src: string) {
 	return new Promise<void>((resolve, reject) => {
 		const existed = document.getElementById(id) as HTMLScriptElement | null
 		if (existed) {
-			if ((existed as any)._loaded) return resolve()
+			if ((existed as any)._loaded)
+				return resolve()
 			existed.addEventListener('load', () => resolve())
 			existed.addEventListener('error', () => reject(new Error(`load fail: ${src}`)))
 			return
@@ -118,7 +120,8 @@ function loadScriptOnce(id: string, src: string) {
 }
 
 async function ensureMetingAssets() {
-	if (!import.meta.client) return
+	if (!import.meta.client)
+		return
 	const cssCdnList = [
 		'https://cdn.staticfile.org/aplayer/1.10.1/APlayer.min.css',
 		'https://unpkg.com/aplayer/dist/APlayer.min.css',
@@ -137,7 +140,8 @@ async function ensureMetingAssets() {
 	async function tryList(id: string, list: string[], isCss = false) {
 		for (const url of list) {
 			try {
-				if (isCss) addLinkOnce(id, url)
+				if (isCss)
+					addLinkOnce(id, url)
 				else await loadScriptOnce(id, url)
 				return true
 			}
@@ -160,18 +164,21 @@ onMounted(() => {
 })
 
 // 解析音乐分享链接 → { server, type, id }
-function parseMusicURL(url?: string): { server: string; type: string; id: string } | null {
-	if (!url) return null
+function parseMusicURL(url?: string): { server: string, type: string, id: string } | null {
+	if (!url)
+		return null
 	try {
 		const normalized = url.replace('#/', '/')
-		const u = new URL(normalized.startsWith('http') ? normalized : `https:${normalized.startsWith('//') ? normalized : '//' + normalized}`)
+		const u = new URL(normalized.startsWith('http') ? normalized : `https:${normalized.startsWith('//') ? normalized : `//${normalized}`}`)
 		const h = u.hostname
 		const p = u.pathname
 		// 网易云
 		if (h.includes('music.163.com')) {
 			let type = 'song'
-			if (p.includes('/playlist')) type = 'playlist'
-			else if (p.includes('/album')) type = 'album'
+			if (p.includes('/playlist'))
+				type = 'playlist'
+			else if (p.includes('/album'))
+				type = 'album'
 			const id = u.searchParams.get('id') || ''
 			return id ? { server: 'netease', type, id } : null
 		}
@@ -179,18 +186,21 @@ function parseMusicURL(url?: string): { server: string; type: string; id: string
 		if (h.includes('y.qq.com') || h.includes('qq.com')) {
 			let id = u.searchParams.get('songmid') || ''
 			if (!id) {
-				const m = p.match(/songDetail\/([\w]+)/i) || p.match(/song\/([\w]+)/i)
-				if (m) id = m[1]
+				const m = p.match(/songDetail\/(\w+)/i) || p.match(/song\/(\w+)/i)
+				if (m)
+					id = m[1]
 			}
 			return id ? { server: 'tencent', type: 'song', id } : null
 		}
 		// 裸数字 → 默认按网易云单曲
-		if (/^\d+$/.test(url)) return { server: 'netease', type: 'song', id: url }
+		if (/^\d+$/.test(url))
+			return { server: 'netease', type: 'song', id: url }
 		return null
 	}
 	catch {
 		// 非URL或无法解析，允许裸数字兜底
-		if (/^\d+$/.test(url)) return { server: 'netease', type: 'song', id: url }
+		if (/^\d+$/.test(url))
+			return { server: 'netease', type: 'song', id: url }
 		return null
 	}
 }
@@ -234,13 +244,13 @@ function getBilibiliEmbed(ext?: string) {
 		bvid = s
 	}
 	else if (/^av\d+$/i.test(s)) {
-		aid = s.replace(/[^0-9]/g, '')
+		aid = s.replace(/\D/g, '')
 	}
 	else {
 		try {
 			const u = new URL(normalizeBiliUrl(s))
 			const path = u.pathname
-			const mBV = path.match(/\/BV([0-9A-Za-z]+)/i)
+			const mBV = path.match(/\/BV([0-9A-Z]+)/i)
 			if (mBV)
 				bvid = `BV${mBV[1]}`
 			const mAV = path.match(/\/av(\d+)/i)
@@ -268,7 +278,7 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	if (/^https?:\/\//i.test(ext))
 		return ext
 	// 其他情况做保守处理：含点号视为域名拼接 https
-	if (/[.]/.test(ext))
+	if (/\./.test(ext))
 		return `https://${ext}`
 	return ext
 }
@@ -280,124 +290,128 @@ function formatExtensionUrl(ext?: string, type?: string) {
 		<ZhiluHeader to="/" suffix="说说" />
 	</div>
 
-	<!-- 加载状态 -->
-	<div v-if="pending" class="shuo-loading" aria-busy="true" aria-live="polite">
-		<div class="skeleton-list">
-			<div v-for="i in 4" :key="i" class="skeleton-item card">
-				<div class="skeleton-line skeleton-time" />
-				<div class="skeleton-line skeleton-content" />
-				<div class="skeleton-line skeleton-content short" />
+	<ClientOnly>
+		<!-- 加载状态 -->
+		<div v-if="pending" class="shuo-loading" aria-busy="true" aria-live="polite">
+			<div class="skeleton-list">
+				<div v-for="i in 4" :key="i" class="skeleton-item card">
+					<div class="skeleton-line skeleton-time" />
+					<div class="skeleton-line skeleton-content" />
+					<div class="skeleton-line skeleton-content short" />
+				</div>
 			</div>
 		</div>
-	</div>
+			</div>
+		</div>
 
-	<!-- 错误状态 -->
-	<div v-else-if="error" class="shuo-error">
-		<ZError>
-			<template #title>
-				加载失败
-			</template>
-			<template #description>
-				无法获取说说数据，可能是网络原因。
-				<br>
-				<span class="error-detail">{{ error.message }}</span>
-			</template>
-		</ZError>
-	</div>
-
-	<!-- 正常内容 -->
-	<div v-else class="shuo-list">
-		<div v-if="!data?.items?.length" class="shuo-empty">
+		<!-- 错误状态 -->
+		<div v-else-if="error" class="shuo-error">
 			<ZError>
 				<template #title>
-					暂无说说
+					加载失败
 				</template>
 				<template #description>
-					还没有发布内容
+					无法获取说说数据，可能是网络原因。
+					<br>
+					<span class="error-detail">{{ error.message }}</span>
 				</template>
 			</ZError>
 		</div>
 
-		<TransitionGroup v-else appear name="float-in">
-			<article v-for="(item, index) in data?.items" :key="item.id" class="shuo-item card" :style="{ '--delay': `${index * 0.05}s` }">
-				<header class="shuo-meta">
-					<span class="author">{{ item.username || '匿名' }}</span>
-					<time class="time">{{ formatShuoTime(item.created_at) }}</time>
-					<span v-if="typeof item.fav_count === 'number'" class="likes">
-						<Icon name="ph:thumbs-up" /> {{ item.fav_count }}
-					</span>
-				</header>
+		<!-- 正常内容 -->
+		<div v-else class="shuo-list">
+			<div v-if="!data?.items?.length" class="shuo-empty">
+				<ZError>
+					<template #title>
+						暂无说说
+					</template>
+					<template #description>
+						还没有发布内容
+					</template>
+				</ZError>
+			</div>
 
-				<div class="shuo-content" v-text="item.content" />
+			<TransitionGroup v-else appear name="float-in">
+				<article v-for="(item, index) in data?.items" :key="item.id" class="shuo-item card" :style="{ '--delay': `${index * 0.05}s` }">
+					<header class="shuo-meta">
+						<span class="author">{{ item.username || '匿名' }}</span>
+						<time class="time">{{ formatShuoTime(item.created_at) }}</time>
+						<span v-if="typeof item.fav_count === 'number'" class="likes">
+							<Icon name="ph:thumbs-up" /> {{ item.fav_count }}
+						</span>
+					</header>
 
-				<!-- 音乐扩展（APlayer / meting-js） -->
-				<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
-					<div v-if="aplayerReady && parseMusicURL(item.extension)">
-						<meting-js
-							:api="METING_API"
-							:server="parseMusicURL(item.extension)!.server"
-							:type="parseMusicURL(item.extension)!.type"
-							:id="parseMusicURL(item.extension)!.id"
-							preload="none"
-							fixed="false"
-							loop="none"
-							order="list"
-							mini="false"
-						/>
+					<div class="shuo-content" v-text="item.content" />
+
+					<!-- 音乐扩展（APlayer / meting-js） -->
+					<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
+						<div v-if="aplayerReady && parseMusicURL(item.extension)">
+							<meting-js
+								:id="parseMusicURL(item.extension)!.id"
+								:api="METING_API"
+								:server="parseMusicURL(item.extension)!.server"
+								:type="parseMusicURL(item.extension)!.type"
+								preload="none"
+								fixed="false"
+								loop="none"
+								order="list"
+								mini="false"
+							/>
+						</div>
+						<div v-else>
+							<!-- Fallback：网易云外链播放器，避免空白 -->
+							<iframe
+								:title="`音乐 ${item.id}`"
+								:src="getNeteaseEmbed(item.extension)"
+								width="100%"
+								height="86"
+								frameborder="0"
+								allow="autoplay; encrypted-media"
+							/>
+						</div>
 					</div>
-					<div v-else>
-						<!-- Fallback：网易云外链播放器，避免空白 -->
+
+					<!-- B 站视频扩展 -->
+					<div v-else-if="isBilibili(item.extension_type, item.extension)" class="shuo-bilibili">
 						<iframe
-							:title="`音乐 ${item.id}`"
-							:src="getNeteaseEmbed(item.extension)"
+							:title="`哔哩哔哩 ${item.id}`"
+							:src="getBilibiliEmbed(item.extension)"
 							width="100%"
-							height="86"
+							height="100%"
 							frameborder="0"
 							allow="autoplay; encrypted-media"
-						></iframe>
+							allowfullscreen
+						/>
 					</div>
-				</div>
 
-				<!-- B 站视频扩展 -->
-				<div v-else-if="isBilibili(item.extension_type, item.extension)" class="shuo-bilibili">
-					<iframe
-						:title="`哔哩哔哩 ${item.id}`"
-						:src="getBilibiliEmbed(item.extension)"
-						width="100%"
-						height="100%"
-						frameborder="0"
-						allow="autoplay; encrypted-media"
-						allowfullscreen
-					></iframe>
-				</div>
+					<!-- 单图扩展（当 images 为空时兜底） -->
+					<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="shuo-images">
+						<NuxtImg :src="item.extension!" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="shuo-image" />
+					</div>
 
-				<!-- 单图扩展（当 images 为空时兜底） -->
-				<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="shuo-images">
-					<NuxtImg :src="item.extension" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="shuo-image" />
-				</div>
+					<!-- 其他扩展统一展示为外链 -->
+					<div v-else-if="item.extension" class="shuo-extension">
+						<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="shuo-link">查看附加内容</a>
+					</div>
 
-				<!-- 其他扩展统一展示为外链 -->
-				<div v-else-if="item.extension" class="shuo-extension">
-					<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="shuo-link">查看附加内容</a>
-				</div>
+					<div v-if="item.images?.length" class="shuo-images">
+						<NuxtImg
+							v-for="(img, idx) in item.images"
+							:key="idx"
+							:src="img.image_url!"
+							:alt="`图片 ${idx + 1}`"
+							loading="lazy"
+							decoding="async"
+							sizes="(max-width: 768px) 33vw, 240px"
+							class="shuo-image"
+						/>
+					</div>
+				</article>
+			</TransitionGroup>
 
-				<div v-if="item.images?.length" class="shuo-images">
-					<NuxtImg
-						v-for="(img, idx) in item.images"
-						:key="idx"
-						:src="img.image_url"
-						:alt="`图片 ${idx + 1}`"
-						loading="lazy"
-						decoding="async"
-						sizes="(max-width: 768px) 33vw, 240px"
-						class="shuo-image"
-					/>
-				</div>
-			</article>
-		</TransitionGroup>
-
-		<ZPagination v-model="page" :total-pages="totalPages" />
-	</div>
+			<ZPagination v-model="page" :total-pages="totalPages" />
+		</div>
+	</ClientOnly>
 </div>
 </template>
 
@@ -446,9 +460,9 @@ function formatExtensionUrl(ext?: string, type?: string) {
 }
 
 .shuo-music {
+	overflow: hidden;
 	margin-top: 0.5rem;
 	border-radius: 0.5rem;
-	overflow: hidden;
 }
 
 .shuo-images {
@@ -465,17 +479,37 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	}
 }
 
-.shuo-extension { margin-top: 0.5rem; }
-.shuo-link { color: var(--c-brand); text-decoration: underline; }
-.shuo-bilibili { margin-top: 0.5rem; border-radius: 0.5rem; overflow: hidden; aspect-ratio: 16 / 9; }
-.shuo-bilibili iframe { width: 100%; height: 100%; display: block; }
+.shuo-extension {
+	margin-top: 0.5rem;
+}
+
+.shuo-link {
+	text-decoration: underline;
+	color: var(--c-brand);
+}
+
+.shuo-bilibili {
+	overflow: hidden;
+	aspect-ratio: 16 / 9;
+	margin-top: 0.5rem;
+	border-radius: 0.5rem;
+}
+
+.shuo-bilibili iframe {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
 
 // 骨架屏
 .skeleton-list {
 	display: grid;
 	gap: 1rem;
 }
-.skeleton-item { padding: 1rem; }
+
+.skeleton-item {
+	padding: 1rem;
+}
 
 .skeleton-line {
 	height: 0.9rem;
@@ -491,6 +525,9 @@ function formatExtensionUrl(ext?: string, type?: string) {
 		width: 100%;
 		margin: 0.4rem 0;
 	}
-	&.short { width: 70%; }
+
+	&.short {
+		width: 70%;
+	}
 }
 </style>
