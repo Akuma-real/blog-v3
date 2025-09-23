@@ -56,7 +56,8 @@ const { word } = storeToRefs(searchStore)
 		color: currentcolor;
 	}
 
-	@media (max-width: $breakpoint-mobile) {
+	// 在 <= 1080px（含 769~1080）区间也改为抽屉式，避免与内容区并排造成横向溢出
+	@media (max-width: $breakpoint-widescreen) {
 		position: fixed;
 		inset-inline-start: 0;
 		width: 320px;
@@ -87,7 +88,8 @@ const { word } = storeToRefs(searchStore)
 		opacity: 0;
 	}
 
-	@media (min-width: $breakpoint-mobile) {
+	// 与抽屉宽度保持一致：1080px 以上隐藏遮罩
+	@media (min-width: $breakpoint-widescreen) {
 		display: none;
 	}
 }
