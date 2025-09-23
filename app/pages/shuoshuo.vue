@@ -49,6 +49,8 @@ const { data, pending, error } = await useFetch<ShuoResponse>(
 
 const totalPages = computed(() => Math.max(1, Math.ceil((data.value?.total || 0) / pageSize)))
 
+
+
 watch(page, (val) => {
 	// 同步到 URL 查询参数，确保可分享/回退
 	router.replace({ query: { ...route.query, page: val > 1 ? String(val) : undefined } })
@@ -193,13 +195,13 @@ function parseMusicURL(url?: string): { server: string, type: string, id: string
 			return id ? { server: 'tencent', type: 'song', id } : null
 		}
 		// 裸数字 → 默认按网易云单曲
-		if (/^\d+$/.test(url))
+		if (/^\d+$/.test(url || ''))
 			return { server: 'netease', type: 'song', id: url }
 		return null
 	}
 	catch {
 		// 非URL或无法解析，允许裸数字兜底
-		if (/^\d+$/.test(url))
+		if (/^\d+$/.test(url || ''))
 			return { server: 'netease', type: 'song', id: url }
 		return null
 	}
@@ -273,14 +275,15 @@ function getBilibiliEmbed(ext?: string) {
 function formatExtensionUrl(ext?: string, type?: string) {
 	if (!ext)
 		return ''
-	if (isBilibili(type, ext))
-		return normalizeBiliUrl(ext)
-	if (/^https?:\/\//i.test(ext))
-		return ext
+	const e = ext as string
+	if (isBilibili(type, e))
+		return normalizeBiliUrl(e)
+	if (/^https?:\/\//i.test(e))
+		return e
 	// 其他情况做保守处理：含点号视为域名拼接 https
-	if (/\./.test(ext))
-		return `https://${ext}`
-	return ext
+	if (/\./.test(e))
+		return `https://${e}`
+	return e
 }
 </script>
 
@@ -331,83 +334,91 @@ function formatExtensionUrl(ext?: string, type?: string) {
 				</ZError>
 			</div>
 
-			<TransitionGroup v-else appear name="float-in">
-				<article v-for="(item, index) in data?.items" :key="item.id" class="shuo-item card" :style="{ '--delay': `${index * 0.05}s` }">
-					<header class="shuo-meta">
-						<span class="author">{{ item.username || '匿名' }}</span>
-						<time class="time">{{ formatShuoTime(item.created_at) }}</time>
-						<span v-if="typeof item.fav_count === 'number'" class="likes">
-							<Icon name="ph:thumbs-up" /> {{ item.fav_count }}
-						</span>
-					</header>
+			<TransitionGroup v-else appear name="float-in" class="feed-list">
+				<article v-for="(item, index) in data?.items" :key="item.id" class="shuo-item card feed-item" :style="{ '--delay': `${index * 0.05}s` }">
+					<!-- 左列：头像（来自 config） -->
+					<div class="mobile-only">
+						<NuxtImg :src="(appConfig.author?.avatar as string)" alt="头像" class="feed-avatar-img" width="48" height="48" />
+					</div>
 
-					<div class="shuo-content" v-text="item.content" />
+					<!-- 右列：内容 -->
+					<div class="feed-content">
+						<header class="shuo-meta">
+							<span class="author">{{ appConfig.author?.name || '匿名' }}</span>
+							<time class="time">{{ formatShuoTime(item.created_at) }}</time>
+							<span v-if="typeof item.fav_count === 'number'" class="likes">
+								<Icon name="ph:thumbs-up" /> {{ item.fav_count }}
+							</span>
+						</header>
 
-					<!-- 音乐扩展（APlayer / meting-js） -->
-					<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
-						<div v-if="aplayerReady && parseMusicURL(item.extension)">
-							<meting-js
-								:id="parseMusicURL(item.extension)!.id"
-								:api="METING_API"
-								:server="parseMusicURL(item.extension)!.server"
-								:type="parseMusicURL(item.extension)!.type"
-								preload="none"
-								fixed="false"
-								loop="none"
-								order="list"
-								mini="false"
-							/>
+						<div class="shuo-content" v-text="item.content" />
+
+						<!-- 音乐扩展（APlayer / meting-js） -->
+						<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
+							<div v-if="aplayerReady && parseMusicURL(item.extension)">
+								<meting-js
+									:id="parseMusicURL(item.extension)!.id"
+									:api="METING_API"
+									:server="parseMusicURL(item.extension)!.server"
+									:type="parseMusicURL(item.extension)!.type"
+									preload="none"
+									fixed="false"
+									loop="none"
+									order="list"
+									mini="false"
+								/>
+							</div>
+							<div v-else>
+								<!-- Fallback：网易云外链播放器，避免空白 -->
+								<iframe
+									:title="`音乐 ${item.id}`"
+									:src="getNeteaseEmbed(item.extension)"
+									width="100%"
+									height="86"
+									frameborder="0"
+									allow="autoplay; encrypted-media"
+								/>
+							</div>
 						</div>
-						<div v-else>
-							<!-- Fallback：网易云外链播放器，避免空白 -->
+
+						<!-- B 站视频扩展 -->
+						<div v-else-if="isBilibili(item.extension_type, item.extension)" class="shuo-bilibili">
 							<iframe
-								:title="`音乐 ${item.id}`"
-								:src="getNeteaseEmbed(item.extension)"
+								:title="`哔哩哔哩 ${item.id}`"
+								:src="getBilibiliEmbed(item.extension)"
 								width="100%"
-								height="86"
+								height="100%"
 								frameborder="0"
 								allow="autoplay; encrypted-media"
+								allowfullscreen
 							/>
 						</div>
-					</div>
 
-					<!-- B 站视频扩展 -->
-					<div v-else-if="isBilibili(item.extension_type, item.extension)" class="shuo-bilibili">
-						<iframe
-							:title="`哔哩哔哩 ${item.id}`"
-							:src="getBilibiliEmbed(item.extension)"
-							width="100%"
-							height="100%"
-							frameborder="0"
-							allow="autoplay; encrypted-media"
-							allowfullscreen
-						/>
-					</div>
+						<!-- 单图扩展（当 images 为空时兜底） -->
+						<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="shuo-images">
+								<NuxtImg :src="(item.extension as string)" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="shuo-image" />
+							</div>
 
-					<!-- 单图扩展（当 images 为空时兜底） -->
-					<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="shuo-images">
-						<NuxtImg :src="item.extension!" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="shuo-image" />
-					</div>
+							<!-- 其他扩展统一展示为外链 -->
+							<div v-else-if="item.extension" class="shuo-extension">
+								<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="shuo-link">查看附加内容</a>
+							</div>
 
-					<!-- 其他扩展统一展示为外链 -->
-					<div v-else-if="item.extension" class="shuo-extension">
-						<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="shuo-link">查看附加内容</a>
-					</div>
-
-					<div v-if="item.images?.length" class="shuo-images">
-						<NuxtImg
-							v-for="(img, idx) in item.images"
-							:key="idx"
-							:src="img.image_url!"
-							:alt="`图片 ${idx + 1}`"
-							loading="lazy"
-							decoding="async"
-							sizes="(max-width: 768px) 33vw, 240px"
-							class="shuo-image"
-						/>
-					</div>
-				</article>
-			</TransitionGroup>
+							<div v-if="item.images?.length" class="shuo-images">
+								<NuxtImg
+									v-for="(img, idx) in item.images"
+									:key="idx"
+									:src="(img.image_url as string)"
+									:alt="`图片 ${idx + 1}`"
+									loading="lazy"
+									decoding="async"
+									sizes="(max-width: 768px) 33vw, 240px"
+									class="shuo-image"
+								/>
+							</div>
+						</div>
+						</article>
+					</TransitionGroup>
 
 			<ZPagination v-model="page" :total-pages="totalPages" />
 		</div>
@@ -425,9 +436,81 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	gap: 1rem;
 }
 
+.feed-list {
+	display: grid;
+	gap: 1rem;
+}
+
+.feed-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+}
+
+.feed-avatar {
+	display: none;
+}
+
+.feed-avatar-img {
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.feed-content {
+	flex: 1;
+}
+
+.shuo-timeline {
+	position: relative;
+	padding-left: 2rem;
+}
+
+.shuo-timeline::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 1rem;
+	width: 2px;
+	background: var(--c-text-3);
+}
+
+
+.timeline-group {
+	position: relative;
+	padding-bottom: 0.5rem;
+}
+
+.timeline-group::before {
+	content: none;
+}
+
+.timeline-date {
+	position: static;
+	margin: 0.5rem 0 0.5rem 1.5rem;
+	background: transparent;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--c-text-2);
+}
+
+.timeline-date::before {
+	content: none;
+}
+
 .shuo-item {
+	position: relative;
 	padding: 1rem;
 }
+
+
+.shuo-item::before {
+	content: none;
+}
+
 
 .shuo-meta {
 	display: flex;
