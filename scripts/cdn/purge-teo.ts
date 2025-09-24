@@ -7,6 +7,7 @@
  * - TEO_ZONE_ID
  * - TEO_PURGE_TYPE (可选：purge_prefix | purge_url | purge_host | purge_all；默认 purge_prefix)
  * - TEO_PURGE_TARGETS (多个用逗号、空格或换行分隔；purge_all 可留空)
+ * 注：目录/Hostname/全量三类刷新默认使用 Method=delete（不可配置）。
  */
 
 import tencentcloud from 'tencentcloud-sdk-nodejs-teo'
@@ -62,6 +63,11 @@ async function main() {
 
   const params: any = { ZoneId: zoneId, Type: typeRaw }
   if (typeRaw !== 'purge_all') params.Targets = targets
+
+  // 对目录/Hostname/全量三类刷新固定使用 Method=delete
+  if (['purge_prefix', 'purge_host', 'purge_all'].includes(typeRaw)) {
+    params.Method = 'delete'
+  }
 
   console.log('[CDN] 触发刷新任务：', JSON.stringify(params, null, 2))
 
