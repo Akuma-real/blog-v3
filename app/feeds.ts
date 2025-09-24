@@ -8,10 +8,9 @@ export default [
 		// @keep-sorted { "keys": ["date"] }
 		entries: [
 			{
-				author: '弦理智库',
+				author: '陆小启',
 				desc: '往者不谏，来者可追',
-				link: 'https://blog.zonox.top',
-				feed: 'https://blog.zonox.top/feed',
+				link: 'https://blog.luxq.space',
 				icon: 'https://cdn.sa.net/2025/09/01/Q7NJPrDvGkmS92u.jpg',
 				avatar: 'https://cdn.sa.net/2025/09/01/Q7NJPrDvGkmS92u.jpg',
 				archs: ['服务器'],
