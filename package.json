@@ -11,6 +11,7 @@
     "dev:host": "nuxt dev --host",
     "build": "cross-env NODE_OPTIONS='--no-deprecation' nuxt build",
     "generate": "nuxt generate",
+    "postgenerate": "pnpx tsx scripts/cdn/purge-teo.ts",
     "preview": "nuxt preview",
     "lint": "stylelint '**/*.{vue,scss}'",
     "lint:fix": "eslint --fix && stylelint '**/*.{vue,scss}' --fix",
@@ -67,6 +68,7 @@
     "strip-ansi": "catalog:util",
     "stylelint": "catalog:quality",
     "typescript": "catalog:framework",
-    "unplugin-yaml": "catalog:framework"
+    "unplugin-yaml": "catalog:framework",
+    "tencentcloud-sdk-nodejs-teo": "^4.0.3"
   }
 }
