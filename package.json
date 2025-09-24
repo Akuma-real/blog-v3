@@ -46,7 +46,8 @@
     "vue": "catalog:framework",
     "vue-router": "catalog:framework",
     "vue-tippy": "catalog:ui",
-    "vue-virtual-scroller": "catalog:ui"
+    "vue-virtual-scroller": "catalog:ui",
+    "tencentcloud-sdk-nodejs-teo": "^4.0.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:quality",
@@ -68,7 +69,6 @@
     "strip-ansi": "catalog:util",
     "stylelint": "catalog:quality",
     "typescript": "catalog:framework",
-    "unplugin-yaml": "catalog:framework",
-    "tencentcloud-sdk-nodejs-teo": "^4.0.3"
+    "unplugin-yaml": "catalog:framework"
   }
 }

@@ -33,13 +33,13 @@ async function main() {
 
   const missing = ['TENCENTCLOUD_SECRET_ID', 'TENCENTCLOUD_SECRET_KEY', 'TEO_ZONE_ID'].filter(n => !getEnv(n))
   if (missing.length > 0) {
-    console.error(`[CDN] 缺少必要环境变量：${missing.join(', ')}`)
-    process.exit(2)
+    console.log(`[CDN] 未配置必要环境变量（${missing.join(', ')}），跳过刷新。`)
+    return
   }
 
   if (typeRaw !== 'purge_all' && targets.length === 0) {
-    console.error('[CDN] 未提供 TEO_PURGE_TARGETS，且 TEO_PURGE_TYPE 非 purge_all。')
-    process.exit(2)
+    console.log('[CDN] 未提供 TEO_PURGE_TARGETS，且 TEO_PURGE_TYPE 非 purge_all，跳过刷新。')
+    return
   }
 
   const clientConfig = {
