@@ -343,8 +343,9 @@ function formatExtensionUrl(ext?: string, type?: string) {
 						<header class="shuo-meta">
 							<span class="author">{{ appConfig.author?.name || '匿名' }}</span>
 							<time class="time">{{ formatShuoTime(item.created_at) }}</time>
-							<span v-if="typeof item.fav_count === 'number'" class="likes">
-								<Icon name="ph:thumbs-up" /> {{ item.fav_count }}
+							<span v-if="item.fav_count != null" class="likes">
+								<!-- 按接口文档（model.Echo.fav_count 为整数）展示点赞数，统一转为数字显示 -->
+								<Icon name="ph:thumbs-up" /> {{ Number(item.fav_count) }}
 							</span>
 						</header>
 
