@@ -15,6 +15,7 @@ export default [
 				avatar: 'https://cdn.sa.net/2025/09/01/Q7NJPrDvGkmS92u.jpg',
 				archs: ['服务器'],
 				date: '2025-09-14',
+				comment: '手机用户进入时注意流量消耗',
 			},
 			{
 				author: '彬彬加冰',
