@@ -160,9 +160,6 @@ watch(hasDetail, (value) => {
 	padding: 0.2rem 0;
 	outline: none;
 
-	&.is-ready {
-		cursor: pointer;
-	}
 
 	&:focus-visible {
 		border-radius: 0.6rem;
@@ -230,4 +227,9 @@ watch(hasDetail, (value) => {
 .highlight {
 	color: var(--c-primary);
 }
+
+.detail-expand :deep(.toggle-btn) {
+	cursor: pointer;
+}
+
 </style>
