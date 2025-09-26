@@ -23,6 +23,7 @@
     "@nuxt/content": "catalog:content",
     "@nuxt/icon": "catalog:ui",
     "@nuxt/image": "catalog:ui",
+    "@nuxt/scripts": "^0.12.1",
     "@nuxtjs/color-mode": "catalog:ui",
     "@nuxtjs/seo": "catalog:content",
     "@pinia/nuxt": "catalog:util",
@@ -43,11 +44,11 @@
     "plain-shiki": "catalog:content",
     "radash": "catalog:util",
     "shiki": "catalog:content",
+    "tencentcloud-sdk-nodejs-teo": "^4.0.3",
     "vue": "catalog:framework",
     "vue-router": "catalog:framework",
     "vue-tippy": "catalog:ui",
-    "vue-virtual-scroller": "catalog:ui",
-    "tencentcloud-sdk-nodejs-teo": "^4.0.3"
+    "vue-virtual-scroller": "catalog:ui"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:quality",

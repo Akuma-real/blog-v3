@@ -7,6 +7,13 @@ import redirectList from './redirects.json'
 
 // 此处配置无需修改
 export default defineNuxtConfig({
+	scripts: {
+		registry: {
+			clarity: {
+				id: process.env.NUXT_PUBLIC_CLARITY_ID,
+			},
+		},
+	},
 	vue: {
 		compilerOptions: {
 			isCustomElement: tag => ['meting-js'].includes(tag),
@@ -118,6 +125,7 @@ export default defineNuxtConfig({
 		'@nuxt/content',
 		'@nuxt/icon',
 		'@nuxt/image',
+		'@nuxt/scripts',
 		'@nuxtjs/color-mode',
 		'@nuxtjs/seo',
 		'@pinia/nuxt',
