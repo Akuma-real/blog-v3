@@ -1,27 +1,36 @@
 <script setup lang="ts">
-interface IpGeo {
-	asn: number
-	countryName: string
-	countryCodeAlpha2: string
-	countryCodeAlpha3: string
-	countryCodeNumeric: string
-	regionName: string
-	regionCode: string
-	cityName: string
-	latitude: number
-	longitude: number
-	cisp: string
+// 新接口响应数据结构定义（https://api.nsmao.net/api/ip/query）
+interface NsmaoIpData {
+    ip: string
+    country: string
+    prov: string
+    city: string
+    district: string
+    adcode: number
+    lat: number
+    lng: number
+    /** 兼容旧 UI 逻辑：若上游未来补充 isp，则可直接显示 */
+    isp?: string
 }
 
-interface IpResponse {
-	geo: IpGeo
-	uuid: string
-	clientIp: string
+interface NsmaoIpResponse {
+    code: number
+    msg: string
+    data: NsmaoIpData
+    exec_time: number
+    ip: string
 }
 
-const { data: ipInfo, error } = useAsyncData<IpResponse>(
+// 从运行时配置读取公开的 key（需在环境变量中提供 NUXT_PUBLIC_IPIP_KEY）
+const { public: { ipipKey, bloggerLat, bloggerLng } } = useRuntimeConfig()
+
+const { data: ipInfo, error } = useAsyncData<NsmaoIpResponse | null>(
 	'widget-visitor-ip',
-	() => $fetch<IpResponse>('https://ip.anye.xyz/json'),
+	() => {
+		if (!ipipKey)
+			throw new Error('IP 查询 Key 未配置（NUXT_PUBLIC_IPIP_KEY）')
+		return $fetch<NsmaoIpResponse>(`https://api.nsmao.net/api/ip/query?key=${encodeURIComponent(ipipKey as string)}`)
+	},
 	{
 		server: false,
 		immediate: true,
@@ -29,25 +38,51 @@ const { data: ipInfo, error } = useAsyncData<IpResponse>(
 	},
 )
 
-const countryDisplay = computed(() => ipInfo.value?.geo?.countryName || '')
+// 国家/省市文本处理
+const countryDisplay = computed(() => ipInfo.value?.data?.country || '')
 const displayCity = computed(() => {
-	const raw = ipInfo.value?.geo?.cityName?.trim() || ''
+	const raw = ipInfo.value?.data?.city?.trim() || ''
 	const lowered = raw.toLowerCase()
 	if (!raw || lowered === 'unknown' || lowered === 'n/a' || raw === '-')
 		return ''
 	return raw
 })
-const displayRegion = computed(() => ipInfo.value?.geo?.regionName || '')
+const displayRegion = computed(() => ipInfo.value?.data?.prov || '')
 
 const locationLabel = computed(() => displayCity.value || displayRegion.value || countryDisplay.value || '世界')
 
 const addressText = computed(() => [countryDisplay.value, displayRegion.value, displayCity.value].filter(Boolean).join(' · '))
 
-const ispText = computed(() => ipInfo.value?.geo?.cisp || '')
+// 运营商/来访 IP
+const ispText = computed(() => ipInfo.value?.data?.isp || '')
+const ipText = computed(() => ipInfo.value?.data?.ip?.trim() || '')
 
-const ipText = computed(() => ipInfo.value?.clientIp?.trim() || '')
+// 就绪条件：拿到有效 data
+const isReady = computed(() => Boolean(ipInfo.value?.data))
 
-const isReady = computed(() => Boolean(ipInfo.value))
+// 计算距博主的直线距离（单位：公里，哈弗辛公式）
+const hostLat = Number.isFinite(Number(bloggerLat)) ? Number(bloggerLat) : 32.993421
+const hostLng = Number.isFinite(Number(bloggerLng)) ? Number(bloggerLng) : 120.640762
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const toRad = (d: number) => (d * Math.PI) / 180
+    const R = 6371 // 地球半径（公里）
+    const dLat = toRad(lat2 - lat1)
+    const dLon = toRad(lon2 - lon1)
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+}
+const distanceKm = computed(() => {
+    const lat = ipInfo.value?.data?.lat
+    const lng = ipInfo.value?.data?.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null
+    return haversineKm(lat, lng, hostLat, hostLng)
+})
+const distanceText = computed(() => {
+    const d = distanceKm.value
+    if (d == null) return ''
+    return d >= 100 ? `${Math.round(d)} 公里` : `${Math.round(d * 10) / 10} 公里`
+})
 
 const detailOpen = ref(false)
 const hasDetail = computed(() => Boolean(ipText.value || addressText.value || ispText.value))
@@ -81,6 +116,9 @@ watch(hasDetail, (value) => {
 				<span class="highlight">{{ locationLabel }}</span>
 				的小伙伴，你好呀！
 			</p>
+			<p v-if="distanceText" class="greeting">
+				你目前距博主约 <span class="highlight">{{ distanceText }}</span>，带我去你那里逛一逛叭~
+			</p>
 			<ZExpand
 				v-if="hasDetail"
 				v-model="detailOpen"
@@ -97,6 +135,7 @@ watch(hasDetail, (value) => {
 						<span class="label">地址</span>
 						<span class="value">{{ addressText }}</span>
 					</p>
+
 					<p v-if="ispText" class="detail-row detail-row-isp">
 						<span class="label">运营商</span>
 						<span class="value">{{ ispText }}</span>
