@@ -67,6 +67,8 @@ const blogConfig = {
 	scripts: [
 		// Twikoo 评论系统
 		{ src: 'https://lib.baomitu.com/twikoo/1.6.44/twikoo.min.js', defer: true },
+		// 站点统计（PC/移动端，异步加载）
+		{ src: 'https://01998435-f0f5-73f1-a059-982283fea95a.spst2.com/ustat.js', async: true },
 	],
 
 	/** 自己部署的 Twikoo 服务 */
