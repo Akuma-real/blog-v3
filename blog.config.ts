@@ -73,8 +73,8 @@ const blogConfig = {
 
 	/** 自己部署的 Twikoo 服务 */
 	twikoo: {
-		envId: 'https://twikoo.june.ink/',
-		preload: 'https://twikoo.june.ink/',
+		envId: 'https://twikoo-blog.june.ink/',
+		preload: 'https://twikoo-blog.june.ink/',
 	},
 }
 
