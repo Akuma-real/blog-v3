@@ -137,6 +137,7 @@ export default defineNuxtConfig({
 
 	// @keep-sorted
 	modules: [
+		'@dxup/nuxt',
 		'@nuxt/content',
 		'@nuxt/icon',
 		'@nuxt/image',
@@ -161,8 +162,10 @@ export default defineNuxtConfig({
 				// @keep-sorted
 				remarkPlugins: {
 					'remark-math': {},
+					'remark-music': {},
 					'remark-reading-time': {},
 				},
+				// @keep-sorted
 				rehypePlugins: {
 					'rehype-katex': {},
 				},
