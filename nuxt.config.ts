@@ -31,6 +31,21 @@ export default defineNuxtConfig({
 			link: [
 				{ rel: 'icon', href: blogConfig.favicon },
 				{ rel: 'alternate', type: 'application/atom+xml', href: '/atom.xml' },
+				// 预加载本地首屏字体（若用于 LCP 文本）
+				{ rel: 'preload', as: 'font', href: '/fonts/AlimamaFangYuanTi.woff2', type: 'font/woff2', crossorigin: '' },
+				// 常用第三方域名：提前 DNS 预解析/连接
+				{ rel: 'dns-prefetch', href: 'https://rsms.me' },
+				{ rel: 'preconnect', href: 'https://rsms.me', crossorigin: '' },
+				{ rel: 'dns-prefetch', href: 'https://fonts.gstatic.cn' },
+				{ rel: 'dns-prefetch', href: 'https://fonts.googleapis.cn' },
+				{ rel: 'preconnect', href: 'https://fonts.googleapis.cn', crossorigin: '' },
+				{ rel: 'dns-prefetch', href: 'https://cdn-font.hyperos.mi.com' },
+				{ rel: 'preconnect', href: 'https://cdn-font.hyperos.mi.com', crossorigin: '' },
+				{ rel: 'dns-prefetch', href: 'https://scripts.clarity.ms' },
+				{ rel: 'dns-prefetch', href: 'https://lib.baomitu.com' },
+				{ rel: 'preconnect', href: 'https://lib.baomitu.com', crossorigin: '' },
+				{ rel: 'dns-prefetch', href: 'https://01998435-f0f5-73f1-a059-982283fea95a.spst2.com' },
+				{ rel: 'preconnect', href: 'https://01998435-f0f5-73f1-a059-982283fea95a.spst2.com', crossorigin: '' },
 				{ rel: 'preconnect', href: blogConfig.twikoo.preload },
 				{ rel: 'stylesheet', href: 'https://lib.baomitu.com/KaTeX/0.16.9/katex.min.css', media: 'print', onload: 'this.media="all"' },
 				// "InterVariable", "Inter", "InterDisplay"
