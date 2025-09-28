@@ -24,7 +24,7 @@ interface NsmaoIpResponse {
 // 从运行时配置读取公开的 key（需在环境变量中提供 NUXT_PUBLIC_IPIP_KEY）
 const { public: { ipipKey, bloggerLat, bloggerLng } } = useRuntimeConfig()
 
-const { data: ipInfo, error, refresh } = useAsyncData<NsmaoIpResponse | null>(
+const { data: ipInfo, error } = useAsyncData<NsmaoIpResponse | null>(
 	'widget-visitor-ip',
 	() => {
 		if (!ipipKey)
@@ -33,7 +33,7 @@ const { data: ipInfo, error, refresh } = useAsyncData<NsmaoIpResponse | null>(
 	},
 	{
 		server: false,
-		immediate: false,
+		immediate: true,
 		default: () => null,
 	},
 )
@@ -91,30 +91,11 @@ watch(hasDetail, (value) => {
 	if (!value)
 		detailOpen.value = false
 })
-import { useIntersectionObserver } from '@vueuse/core'
-
-const rootEl = ref<HTMLElement | null>(null)
-let hasTriggered = false
-
-onMounted(() => {
-	// 可见即加载
-	const stop = useIntersectionObserver(rootEl, ([entry]) => {
-		if (entry.isIntersecting && !hasTriggered) {
-			hasTriggered = true
-			stop()
-			refresh()
-		}
-	})
-	// 空闲兜底
-	// @ts-expect-error requestIdleCallback 可能不存在
-	window.requestIdleCallback?.(() => { if (!hasTriggered) { hasTriggered = true; refresh() } }, { timeout: 3000 })
-})
 </script>
 
 <template>
 <ZWidget title="欢迎卡片" card>
 	<div
-		ref="rootEl"
 		class="welcome-card"
 		tabindex="0"
 		:class="{
