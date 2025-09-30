@@ -3,7 +3,7 @@ title: use-mcprouter-in-codex
 description: 讲述关于 use-mcprouter-in-codex 的实践，并根据 AI、MCP、Codex 给出经验分享与坑位总结。
 date: 2025-09-30 11:27:49
 updated: 2025-09-30 11:27:49
-image: ""
+image: 
 categories: [经验分享]
 tags: [ai, mcp, codex]
 ---
