@@ -9,9 +9,9 @@ type LayoutSection = keyof typeof defaultState
 export const useLayoutStore = defineStore('layout', () => {
 	const open = ref({ ...defaultState })
 	const isAnyOpen = computed(() => Object.values(open.value).some(Boolean))
+	const translate = ref<Record<string, string>>({})
 
 	const asideWidgets = ref<WidgetName[]>([])
-	const baseAsideWidgets: WidgetName[] = ['visitor-ip']
 
 	const closeAll = () => {
 		Object.keys(open.value).forEach((key) => {
@@ -26,10 +26,12 @@ export const useLayoutStore = defineStore('layout', () => {
 	}
 
 	const setAside = (widgets?: WidgetName[]) => {
-		if (widgets === undefined)
-			return
-		const nextWidgets = [...new Set([...baseAsideWidgets, ...widgets])] as WidgetName[]
-		asideWidgets.value = nextWidgets
+		if (widgets)
+			asideWidgets.value = widgets
+	}
+
+	const setTranslate = (reason: string, value: string) => {
+		translate.value[reason] = value
 	}
 
 	const isOpen = (key: LayoutSection) => open.value[key]
@@ -38,9 +40,11 @@ export const useLayoutStore = defineStore('layout', () => {
 		open,
 		isAnyOpen,
 		asideWidgets,
+		translate,
 		closeAll,
 		toggle,
 		setAside,
+		setTranslate,
 		isOpen,
 	}
 })
