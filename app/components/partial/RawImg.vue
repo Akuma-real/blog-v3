@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ImageComponent from '#build/mdc-image-component.mjs'
 import { joinURL, withLeadingSlash, withTrailingSlash } from 'ufo'
 
 const props = withDefaults(defineProps<{
@@ -25,12 +24,11 @@ const refinedSrc = computed(() => {
 </script>
 
 <template>
-<component
-	:is="ImageComponent"
+<img
 	:src="refinedSrc"
 	:alt="alt"
 	:width="width"
 	:height="height"
 	:referrerpolicy="mirror ? 'no-referrer' : undefined"
-/>
+>
 </template>
