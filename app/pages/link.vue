@@ -37,7 +37,10 @@ const { data: linksData } = await useAsyncData(
 		try {
 			const response = await $fetch<any>(
 				API_CONFIG.endpoints.links,
-				{ baseURL: API_CONFIG.baseURL },
+				{
+					baseURL: API_CONFIG.baseURL,
+					query: { pageSize: 9999 }, // 获取所有友链
+				},
 			)
 			// 注意：实际上返回的是分页格式，有 list 字段
 			if (response?.code === 200 && response?.data?.list) {
