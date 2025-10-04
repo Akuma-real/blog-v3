@@ -30,21 +30,18 @@ const { data: siteConfig } = await useAsyncData(
 )
 
 // 从 API 获取友链数据
-// API 返回: { code: 200, data: { list: LinkDTO[] } } - 分页格式
+// API 返回: { code: 200, data: LinkDTO[] } - 直接返回数组
 const { data: linksData } = await useAsyncData(
 	'links',
 	async () => {
 		try {
 			const response = await $fetch<any>(
 				API_CONFIG.endpoints.links,
-				{
-					baseURL: API_CONFIG.baseURL,
-					query: { pageSize: 9999 }, // 获取所有友链
-				},
+				{ baseURL: API_CONFIG.baseURL },
 			)
-			// 注意：实际上返回的是分页格式，有 list 字段
-			if (response?.code === 200 && response?.data?.list) {
-				return response.data.list as LinkDTO[]
+			// API 直接返回数组，不是分页对象
+			if (response?.code === 200 && response?.data) {
+				return response.data as LinkDTO[]
 			}
 			return []
 		}
