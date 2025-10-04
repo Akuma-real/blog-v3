@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import type ArticleProps from '~/types/article'
 
-const route = useRoute()
-
-const { data: surrounds } = await useAsyncData(
-	`surround-${route.path}`,
-	() => queryCollectionItemSurroundings('content', route.path, { fields: ['date', 'title', 'type'] })
-		.order('date', 'ASC')
-		.where('stem', 'LIKE', `posts/%`),
-)
-
-const [prev = null, next = null] = surrounds.value ?? []
+const props = defineProps<{
+	prev?: any | null
+	next?: any | null
+}>()
 
 const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	post: ArticleProps | null
@@ -36,13 +30,13 @@ const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
 	</ZRawLink>
 </DefineTemplate>
 
-<div v-if="prev || next" class="surround-post" dir="ltr">
+<div v-if="props.prev || props.next" class="surround-post" dir="ltr">
 	<ReuseTemplate
-		:post="next" icon="solar:rewind-back-bold-duotone"
+		:post="props.next" icon="solar:rewind-back-bold-duotone"
 		fallback-icon="solar:document-add-bold-duotone" fallback-text="新故事即将发生"
 	/>
 	<ReuseTemplate
-		:post="prev" icon="solar:rewind-forward-bold-duotone"
+		:post="props.prev" icon="solar:rewind-forward-bold-duotone"
 		fallback-icon="solar:reel-bold-duotone" fallback-text="已抵达博客尽头"
 		align-end
 	/>

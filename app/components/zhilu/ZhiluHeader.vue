@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const appConfig = useAppConfig()
+const { siteConfig } = useApiSiteConfig()
 </script>
 
 <template>
@@ -14,15 +15,15 @@ const appConfig = useAppConfig()
 		/>
 	</div>
 	<NuxtImg
-		:src="appConfig.header.logo"
+		:src="siteConfig.logo"
 		class="zhilu-logo"
 		:class="{ circle: appConfig.header.showTitle }"
-		:alt="appConfig.title"
+		:alt="siteConfig.title"
 	/>
 	<div v-if="appConfig.header.showTitle" class="zhilu-text">
 		<div class="header-title">
 			<span
-				v-for="(char, charIndex) in appConfig.title"
+				v-for="(char, charIndex) in siteConfig.title"
 				:key="charIndex"
 				class="split-char"
 				:style="{ '--delay': `${(charIndex + 1) * .1}s` }"
@@ -30,7 +31,7 @@ const appConfig = useAppConfig()
 			/>
 		</div>
 		<div class="header-subtitle">
-			{{ appConfig.header.subtitle }}
+			{{ siteConfig.subtitle }}
 		</div>
 	</div>
 </ZRawLink>
