@@ -1,4 +1,8 @@
 {
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".output/public",
+  "nodeVersion": "22.11.0",
   "headers": [
     {
       "source": "/api/*",

@@ -77,6 +77,13 @@ export default defineNuxtConfig({
 		'/zhilu.opml': { prerender: true, headers: { 'Content-Type': 'application/xml' } },
 	},
 
+	nitro: {
+		prerender: {
+			// SPA fallback for EdgeOne Pages
+			failOnError: false,
+		},
+	},
+
 	runtimeConfig: {
 		public: {
 			buildTime: new Date().toISOString(),
@@ -159,6 +166,23 @@ ${packageJson.homepage}
 API 模式已启用 - SSR 支持
 ================================
 `)
+		},
+		'close': async (nuxt) => {
+			// EdgeOne Pages SPA fallback: 复制 200.html 到 404.html
+			const fs = await import('node:fs/promises')
+			const path = await import('node:path')
+			const publicDir = path.resolve(nuxt.options.buildDir, '../.output/public')
+			const source200 = path.join(publicDir, '200.html')
+			const dest404 = path.join(publicDir, '404.html')
+
+			try {
+				await fs.access(source200)
+				await fs.copyFile(source200, dest404)
+				console.info('✅ EdgeOne Pages: 200.html → 404.html (SPA fallback)')
+			}
+			catch {
+				// 文件不存在，跳过
+			}
 		},
 		// 如果不再需要 Nuxt Content，可以删除此 hook
 		// 'content:file:afterParse': (ctx) => {
