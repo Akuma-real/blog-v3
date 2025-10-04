@@ -34,7 +34,8 @@ export default defineNuxtConfig({
 			templateParams: {
 				separator: '|',
 			},
-			titleTemplate: `%s %separator ${blogConfig.title}`,
+			// titleTemplate 移到 api-site-config.ts 插件中动态设置
+			// titleTemplate: `%s %separator ${blogConfig.title}`,
 			script: blogConfig.scripts,
 		},
 		rootAttrs: {
