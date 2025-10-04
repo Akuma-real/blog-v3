@@ -64,7 +64,7 @@ export function useCategory(list: MaybeRefOrGetter<ArticleProps[]>, options?: Us
 	const category = bindQuery
 		? useRouteQuery(bindQuery, undefined, { transform: (value?: string) => value, mode: 'push' })
 		: ref<string | undefined>()
-	const categories = computed(() => [...new Set(toValue(list).map(item => item.categories?.[0]))])
+	const categories = computed(() => [...new Set(toValue(list).map(item => item.categories?.[0]).filter(Boolean))])
 	const listCategorized = computed(
 		() => toValue(list).filter(
 			item => !category.value || item.categories?.[0] === category.value,

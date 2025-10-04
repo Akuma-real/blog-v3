@@ -14,19 +14,34 @@ const builder = new XMLBuilder({
 	textNodeName: '_',
 })
 
-function getUrl(path: string | undefined) {
-	return new URL(path ?? '', blogConfig.url).toString()
-}
-
-function renderContent(post: any) {
+function renderContent(post: any, siteUrl: string) {
 	return [
 		post.cover && `<img src="${post.cover}" />`,
 		post.description && `<p>${post.description}</p>`,
-		`<a class="view-full" href="${getUrl(post.path)}" target="_blank">点击查看全文</a>`,
+		`<a class="view-full" href="${new URL(post.path, siteUrl).toString()}" target="_blank">点击查看全文</a>`,
 	].join(' ')
 }
 
 export default defineEventHandler(async (_event) => {
+	// 从 API 获取站点配置
+	const siteConfigResponse = await $fetch<any>(
+		'/api/public/site-config',
+		{
+			baseURL: API_CONFIG.baseURL,
+		},
+	)
+	const siteConfig = siteConfigResponse.data || {}
+
+	// 使用 API 配置或回退到默认配置
+	const siteUrl = siteConfig.SITE_URL || blogConfig.url
+	const siteName = siteConfig.APP_NAME || blogConfig.title
+	const siteSubtitle = siteConfig.SUB_TITLE || blogConfig.subtitle
+	const siteDescription = siteConfig.SITE_DESCRIPTION || blogConfig.description
+	const authorName = siteConfig.frontDesk?.siteOwner?.name || blogConfig.author.name
+	const authorEmail = siteConfig.frontDesk?.siteOwner?.email || blogConfig.author.email
+	const authorAvatar = siteConfig.USER_AVATAR ? new URL(siteConfig.USER_AVATAR, siteUrl).toString() : blogConfig.author.avatar
+	const siteIcon = siteConfig.ICON_URL ? new URL(siteConfig.ICON_URL, siteUrl).toString() : blogConfig.favicon
+
 	// 从 API 获取文章列表
 	const response = await $fetch<any>(
 		API_CONFIG.endpoints.articles,
@@ -43,19 +58,19 @@ export default defineEventHandler(async (_event) => {
 	const articles = response.data?.list || []
 
 	const entries = articles.map((article: any) => ({
-		id: getUrl(`/${article.abbrlink || article.id}`),
+		id: new URL(`/${article.abbrlink || article.id}`, siteUrl).toString(),
 		title: article.title ?? '',
 		updated: getIsoDatetime(article.updated_at),
-		author: { name: article.author || blogConfig.author.name },
+		author: { name: article.author || authorName },
 		content: {
 			$type: 'html',
 			$: renderContent({
 				cover: article.cover,
 				description: article.summaries?.[0] || '',
 				path: `/${article.abbrlink || article.id}`,
-			}),
+			}, siteUrl),
 		},
-		link: { $href: getUrl(`/${article.abbrlink || article.id}`) },
+		link: { $href: new URL(`/${article.abbrlink || article.id}`, siteUrl).toString() },
 		summary: article.summaries?.[0] || '',
 		category: { $term: article.post_categories?.[0]?.name },
 		published: getIsoDatetime(article.created_at),
@@ -63,18 +78,18 @@ export default defineEventHandler(async (_event) => {
 
 	const feed = {
 		$xmlns: 'http://www.w3.org/2005/Atom',
-		id: blogConfig.url,
-		title: blogConfig.title,
+		id: siteUrl,
+		title: siteName,
 		updated: runtimeConfig.public.buildTime,
-		description: blogConfig.description, // RSS 2.0
+		description: siteDescription, // RSS 2.0
 		author: {
-			name: blogConfig.author.name,
-			email: blogConfig.author.email,
-			uri: blogConfig.author.homepage,
+			name: authorName,
+			email: authorEmail,
+			uri: siteUrl,
 		},
 		link: [
-			{ $href: getUrl('atom.xml'), $rel: 'self' },
-			{ $href: blogConfig.url, $rel: 'alternate' },
+			{ $href: new URL('/atom.xml', siteUrl).toString(), $rel: 'self' },
+			{ $href: siteUrl, $rel: 'alternate' },
 		],
 		language: blogConfig.language, // RSS 2.0
 		generator: {
@@ -82,10 +97,10 @@ export default defineEventHandler(async (_event) => {
 			$version: version,
 			_: 'Zhilu Blog',
 		},
-		icon: blogConfig.favicon,
-		logo: blogConfig.author.avatar, // Ratio should be 2:1
-		rights: `© ${new Date().getFullYear()} ${blogConfig.author.name}`,
-		subtitle: blogConfig.subtitle || blogConfig.description,
+		icon: siteIcon,
+		logo: authorAvatar, // Ratio should be 2:1
+		rights: `© ${new Date().getFullYear()} ${authorName}`,
+		subtitle: siteSubtitle || siteDescription,
 		entry: entries,
 	}
 

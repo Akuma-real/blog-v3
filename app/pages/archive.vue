@@ -1,12 +1,39 @@
 <script setup lang="ts">
 import { group } from 'radash'
+import { API_CONFIG } from '~/config/api'
 
 const appConfig = useAppConfig()
 useSeoMeta({
 	title: '归档',
 	description: `${appConfig.title}的所有文章归档。`,
 })
-const birthYear = appConfig.component.stats.birthYear
+
+// 从 API 获取站点配置
+const { data: siteConfig } = await useAsyncData(
+	'archive-site-config',
+	async () => {
+		try {
+			const response = await $fetch<any>(
+				API_CONFIG.endpoints.siteConfig,
+				{ baseURL: API_CONFIG.baseURL },
+			)
+			if (response?.code === 200 && response?.data) {
+				return response.data
+			}
+			return null
+		}
+		catch (error) {
+			console.error('Failed to fetch site config:', error)
+			return null
+		}
+	},
+)
+
+// 优先使用 API 配置的出生年份，否则使用 app.config 的默认值
+const birthYear = computed(() => {
+	const apiYear = siteConfig.value?.about?.page?.self_info?.contentYear
+	return apiYear ? Number(apiYear) : appConfig.component.stats.birthYear
+})
 
 const layoutStore = useLayoutStore()
 layoutStore.setAside(['blog-stats', 'blog-log'])

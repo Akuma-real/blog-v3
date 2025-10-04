@@ -124,32 +124,6 @@ const feeds = computed(() => {
 	}).filter((group: any) => group.entries.length > 0)
 })
 
-// 获取友链说明页面（如果 API 支持）
-const { data: postLink } = await useAsyncData(
-	'/link',
-	async () => {
-		try {
-			const response = await $fetch<any>(
-				API_CONFIG.endpoints.page('link'),
-				{
-					baseURL: API_CONFIG.baseURL,
-					// 忽略 404 错误，避免在控制台显示
-					ignoreResponseError: true,
-				},
-			)
-			if (response?.code === 200 && response.data) {
-				return {
-					htmlContent: response.data.htmlContent || response.data.content,
-				}
-			}
-		}
-		catch (error) {
-			// 页面内容不存在是正常的，静默处理
-		}
-		return null
-	},
-)
-
 // 构建我的博客信息（从 API 站点配置）
 const myFeed = computed(() => {
 	const config = siteConfig.value
@@ -206,9 +180,97 @@ const isSubmitting = ref(false)
 const submitMessage = ref('')
 const submitStatus = ref<'success' | 'error'>('success')
 
+// 美化错误提示
+function formatErrorMessage(errorMessage: string): string {
+	// 匹配验证错误格式: Key: 'Field' Error:Field validation for 'field' failed on the 'tag' tag
+	const validationMatch = errorMessage.match(/Field validation for '(\w+)' failed on the '(\w+)' tag/)
+
+	if (validationMatch) {
+		const field = validationMatch[1] || ''
+		const tag = validationMatch[2] || ''
+
+		// 字段名称映射
+		const fieldNames: Record<string, string> = {
+			'URL': '网站地址',
+			'Name': '网站名称',
+			'Logo': '网站Logo',
+			'Description': '网站描述',
+		}
+
+		// 验证标签映射
+		const tagMessages: Record<string, string> = {
+			'url': '格式不正确，请输入完整的网址（如：https://example.com）',
+			'required': '不能为空',
+			'min': '长度不足',
+			'max': '长度超出限制',
+			'email': '邮箱格式不正确',
+		}
+
+		const fieldName = fieldNames[field] || field
+		const tagMessage = tagMessages[tag] || '格式不正确'
+
+		return `${fieldName}${tagMessage}`
+	}
+
+	// 如果包含 "参数无效" 等中文，提取关键部分
+	if (errorMessage.includes('参数无效')) {
+		// 尝试提取更友好的信息
+		if (errorMessage.includes('URL')) {
+			return '网站地址格式不正确，请输入完整的网址（如：https://example.com）'
+		}
+		return '请检查输入信息是否正确'
+	}
+
+	// 其他常见错误
+	const errorMap: Record<string, string> = {
+		'network error': '网络连接失败，请检查网络后重试',
+		'timeout': '请求超时，请稍后重试',
+		'not found': '接口地址不存在，请联系管理员',
+		'server error': '服务器错误，请稍后重试',
+	}
+
+	const lowerMessage = errorMessage.toLowerCase()
+	for (const [key, value] of Object.entries(errorMap)) {
+		if (lowerMessage.includes(key)) {
+			return value
+		}
+	}
+
+	// 如果都不匹配，返回通用错误信息
+	return '提交失败，请检查信息是否填写正确'
+}
+
 async function submitLinkApply() {
 	if (isSubmitting.value)
 		return
+
+	// 前端验证
+	if (!linkForm.value.name.trim()) {
+		submitStatus.value = 'error'
+		submitMessage.value = '网站名称不能为空'
+		return
+	}
+
+	if (!linkForm.value.url.trim()) {
+		submitStatus.value = 'error'
+		submitMessage.value = '网站地址不能为空'
+		return
+	}
+
+	// 验证 URL 格式
+	try {
+		const url = new URL(linkForm.value.url)
+		if (!['http:', 'https:'].includes(url.protocol)) {
+			submitStatus.value = 'error'
+			submitMessage.value = '网站地址必须以 http:// 或 https:// 开头'
+			return
+		}
+	}
+	catch {
+		submitStatus.value = 'error'
+		submitMessage.value = '网站地址格式不正确，请输入完整的网址（如：https://example.com）'
+		return
+	}
 
 	isSubmitting.value = true
 	submitMessage.value = ''
@@ -241,12 +303,14 @@ async function submitLinkApply() {
 		}
 		else {
 			submitStatus.value = 'error'
-			submitMessage.value = response.message || '提交失败，请稍后重试'
+			submitMessage.value = formatErrorMessage(response.message || '提交失败，请稍后重试')
 		}
 	}
 	catch (error: any) {
 		submitStatus.value = 'error'
-		submitMessage.value = error.data?.message || '提交失败，请检查网络连接'
+		// 优先使用响应中的错误信息，然后美化
+		const rawMessage = error.data?.message || error.message || '提交失败，请检查网络连接'
+		submitMessage.value = formatErrorMessage(rawMessage)
 	}
 	finally {
 		isSubmitting.value = false
@@ -288,11 +352,61 @@ useSeoMeta({
 
 			<!-- 友链申请表单 -->
 			<form class="link-apply-form" @submit.prevent="submitLinkApply">
-				<Copy prompt="网站名称 *" :code="linkForm.name" @input="linkForm.name = $event.target.textContent" />
-				<Copy prompt="网站地址 *" :code="linkForm.url" @input="linkForm.url = $event.target.textContent" />
-				<Copy prompt="网站Logo" :code="linkForm.logo" @input="linkForm.logo = $event.target.textContent" />
-				<Copy prompt="网站描述" :code="linkForm.description" @input="linkForm.description = $event.target.textContent" />
+				<div class="copy-like-input">
+					<span class="prompt">网站名称 *</span>
+					<input
+						v-model="linkForm.name"
+						type="text"
+						class="input-field"
+						required
+						minlength="2"
+						maxlength="50"
+					>
+				</div>
 
+				<div class="copy-like-input">
+					<span class="prompt">网站地址 *</span>
+					<input
+						v-model="linkForm.url"
+						type="url"
+						class="input-field"
+						placeholder="https://example.com"
+						required
+					>
+				</div>
+
+				<div class="copy-like-input">
+					<span class="prompt">网站Logo</span>
+					<input
+						v-model="linkForm.logo"
+						type="url"
+						class="input-field"
+						placeholder="可选"
+					>
+				</div>
+
+				<div class="copy-like-input">
+					<span class="prompt">网站描述</span>
+					<textarea
+						v-model="linkForm.description"
+						class="input-field textarea"
+						placeholder="可选"
+						rows="2"
+						maxlength="200"
+					/>
+				</div>
+
+				<!-- 错误提示 -->
+				<div v-if="submitMessage && submitStatus === 'error'" class="message error">
+					{{ submitMessage }}
+				</div>
+
+				<!-- 成功提示 -->
+				<div v-if="submitMessage && submitStatus === 'success'" class="message success">
+					{{ submitMessage }}
+				</div>
+
+				<!-- 提交按钮 -->
 				<ZButton
 					type="submit"
 					primary
@@ -300,10 +414,6 @@ useSeoMeta({
 					:disabled="isSubmitting || !linkForm.name || !linkForm.url"
 					style="width: 100%; margin-top: 1rem;"
 				/>
-
-				<p v-if="submitMessage" class="submit-message" :class="submitStatus">
-					{{ submitMessage }}
-				</p>
 			</form>
 		</div>
 	</template>
@@ -320,28 +430,81 @@ useSeoMeta({
 
 .link-apply-form {
 	margin-top: 2rem;
+}
 
-	:deep(.copy .prompt) {
+// 模仿 Copy 组件的样式
+.copy-like-input {
+	display: flex;
+	overflow: clip;
+	margin: 0.5rem 0;
+	border: 1px solid var(--c-border);
+	border-radius: 4px;
+	background-color: var(--ld-bg-card);
+	font-size: 0.8rem;
+	line-height: 2.5;
+	transition: border-color 0.2s;
+
+	&:focus-within {
+		border-color: var(--c-primary);
+		outline: 0.2em solid var(--c-primary-soft);
+
+		.prompt {
+			border-inline-end-color: var(--c-primary);
+			background-color: var(--c-primary-soft);
+			color: var(--c-primary);
+		}
+	}
+
+	.prompt {
+		flex-shrink: 0;
 		width: 8em;
+		padding: 0 1em;
+		border-inline-end: 1px solid var(--c-border);
+		background-color: var(--c-bg-2);
+		color: var(--c-text-2);
 		text-align: center;
+		transition: all 0.2s;
+	}
+
+	.input-field {
+		flex-grow: 1;
+		padding: 0 1em;
+		outline: none;
+		white-space: nowrap;
+		background: transparent;
+		border: none;
+
+		&::placeholder {
+			color: var(--c-text-3);
+		}
+
+		&.textarea {
+			white-space: pre-wrap;
+			resize: vertical;
+			min-height: 2.5em;
+			line-height: 1.5;
+			padding-top: 0.5em;
+			padding-bottom: 0.5em;
+		}
 	}
 }
 
-.submit-message {
-	margin-top: 1rem;
-	padding: 0.8rem;
-	border-radius: 4px;
-	text-align: center;
-	font-size: 0.9rem;
-
-	&.success {
-		background-color: var(--c-primary-soft);
-		color: var(--c-primary);
-	}
+.message {
+	margin: 1rem 0;
+	padding: 0.75rem;
+	border-radius: 0.375rem;
+	font-size: 0.875rem;
 
 	&.error {
-		background-color: #f8d7da;
-		color: #721c24;
+		background-color: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		color: var(--c-error, #ef4444);
+	}
+
+	&.success {
+		background-color: rgba(34, 197, 94, 0.1);
+		border: 1px solid rgba(34, 197, 94, 0.3);
+		color: var(--c-success, #22c55e);
 	}
 }
 </style>

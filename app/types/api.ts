@@ -212,6 +212,22 @@ export interface CreateCommentRequest {
 
 // ============ 站点相关类型 ============
 
+// 社交图标项
+export interface SocialBarItem {
+  icon?: string
+  text?: string
+  title?: string
+  url?: string
+  link?: string
+}
+
+// 社交栏配置
+export interface SocialBarConfig {
+  left?: SocialBarItem[]
+  right?: SocialBarItem[]
+  items?: SocialBarItem[]
+}
+
 // 站点配置 (根据 API 实际返回的字段)
 export interface SiteConfig {
   // 站点基本信息
@@ -222,6 +238,9 @@ export interface SiteConfig {
   LOGO_URL?: string
   ICON_URL?: string
   USER_AVATAR?: string
+
+  // 社交图标配置
+  socialBar?: SocialBarConfig | SocialBarItem[]
 
   // 友链申请自定义代码
   FRIEND_LINK_APPLY_CUSTOM_CODE_HTML?: string
