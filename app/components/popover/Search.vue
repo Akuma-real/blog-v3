@@ -1,36 +1,53 @@
 <script setup lang="ts">
-import MiniSearch from 'minisearch'
+import { API_CONFIG } from '~/config/api'
 
 const props = defineProps<{
 	show?: boolean
 }>()
 
-// await 会阻塞渲染
-const { data, status } = useAsyncData(
-	'search',
-	() => queryCollectionSearchSections('content', {
-		ignoredTags: ['pre'],
-	}),
-)
-
-// TODO: 优化中文分词逻辑
-const miniSearch = new MiniSearch({
-	fields: ['title', 'content'],
-	storeFields: ['title', 'titles', 'content', 'level'],
-	searchOptions: {
-		prefix: true,
-		fuzzy: 0.2,
-	},
-})
-
 const searchStore = useSearchStore()
 const searchInput = ref<HTMLInputElement>()
 
 const { word } = storeToRefs(searchStore)
-const result = computed(() => {
-	void data.value
-	return miniSearch.search(word.value)
-})
+const result = ref<any[]>([])
+const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle')
+
+// 使用防抖进行搜索
+const debouncedSearch = useDebounceFn(async (query: string) => {
+	if (!query || query.trim().length === 0) {
+		result.value = []
+		status.value = 'idle'
+		return
+	}
+
+	status.value = 'pending'
+	try {
+		const response = await $fetch<any>(
+			API_CONFIG.endpoints.search,
+			{
+				baseURL: API_CONFIG.baseURL,
+				query: { q: query, page: 1, size: 20 },
+			},
+		)
+
+		// 转换 API 返回的搜索结果为组件期望格式
+		const hits = response.data?.hits || []
+		result.value = hits.map((hit: any) => ({
+			id: `/${hit.abbrlink || hit.id}`, // 用作跳转路径
+			title: hit.title,
+			titles: [], // 不显示层级,只显示标题
+			content: hit.snippet || '',
+			level: 1,
+			queryTerms: [query], // 用于高亮显示搜索词
+		}))
+		status.value = 'success'
+	}
+	catch (error) {
+		console.error('Search failed:', error)
+		result.value = []
+		status.value = 'error'
+	}
+}, 300)
 
 const isKeyboardMode = ref(false)
 const listResult = useTemplateRef('list-result')
@@ -40,14 +57,9 @@ const activeItem = computed(() => listResult.value?.children[activeIndex.value] 
 
 watch(() => props.show, focusInput)
 
-watch(status, (newStatus) => {
-	if (newStatus === 'success' && data.value) {
-		miniSearch.addAll(data.value)
-	}
-})
-
-watch(word, () => {
+watch(word, (newWord) => {
 	activeIndex.value = 0
+	debouncedSearch(newWord)
 })
 
 useEventListener('mousemove', () => isKeyboardMode.value = false)
