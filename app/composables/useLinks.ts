@@ -1,17 +1,19 @@
 /**
  * 友链相关 API
- * 注意: /public/links 返回的是数组 LinkDTO[]，不是分页对象
- *      /public/link-categories 返回的是数组 LinkCategoryDTO[]
+ * 注意：API 文档说返回数组，但实际返回的是分页对象！
+ *      /public/links 实际返回: { list: LinkDTO[], total, page, pageSize }
+ *      /public/link-categories 返回数组: LinkCategoryDTO[]
  */
 import { API_CONFIG, useApi } from '~/config/api'
-import type { LinkCategoryDTO, LinkDTO } from '~/types/api'
+import type { LinkCategoryDTO, LinkDTO, PaginatedResponse } from '~/types/api'
 
 /**
  * 获取友链列表
- * API 返回: { code: 200, data: LinkDTO[] } - 直接返回数组
+ * 实际返回: { code: 200, data: { list: LinkDTO[], total, page, pageSize } }
+ * （文档不准确）
  */
 export function useLinks() {
-  return useApi<LinkDTO[]>(API_CONFIG.endpoints.links)
+  return useApi<PaginatedResponse<LinkDTO>>(API_CONFIG.endpoints.links)
 }
 
 /**
