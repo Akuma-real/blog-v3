@@ -2,13 +2,14 @@
 import { group } from 'radash'
 import { API_CONFIG } from '~/config/api'
 
+// ============================================
+// 1. 初始化
+// ============================================
 const appConfig = useAppConfig()
-useSeoMeta({
-	title: '归档',
-	description: `${appConfig.title}的所有文章归档。`,
-})
 
-// 从 API 获取站点配置
+// ============================================
+// 2. API 数据获取
+// ============================================
 const { data: siteConfig } = await useAsyncData(
 	'archive-site-config',
 	async () => {
@@ -29,18 +30,19 @@ const { data: siteConfig } = await useAsyncData(
 	},
 )
 
+const { data: listRaw } = await useArticleIndex()
+
+// ============================================
+// 3. 数据转换层
+// ============================================
+const { listSorted, isAscending, sortOrder } = useArticleSort(listRaw)
+const { category, categories, listCategorized } = useCategory(listSorted)
+
 // 优先使用 API 配置的出生年份，否则使用 app.config 的默认值
 const birthYear = computed(() => {
 	const apiYear = siteConfig.value?.about?.page?.self_info?.contentYear
 	return apiYear ? Number(apiYear) : appConfig.component.stats.birthYear
 })
-
-const layoutStore = useLayoutStore()
-layoutStore.setAside(['blog-stats', 'blog-log'])
-
-const { data: listRaw } = await useArticleIndex()
-const { listSorted, isAscending, sortOrder } = useArticleSort(listRaw)
-const { category, categories, listCategorized } = useCategory(listSorted)
 
 const listGrouped = computed(() => {
 	const groupList = Object.entries(group(
@@ -57,6 +59,18 @@ const yearlyWordCount = computed(() => {
 		acc[year] = formatNumber(totalWords)
 		return acc
 	}, {})
+})
+
+// ============================================
+// 4. 副作用层 - Layout 和 SEO 设置
+// ============================================
+const layoutStore = useLayoutStore()
+
+// 初始化时设置
+layoutStore.setAside(['blog-stats', 'blog-log'])
+useSeoMeta({
+	title: '归档',
+	description: `${appConfig.title}的所有文章归档。`,
 })
 </script>
 

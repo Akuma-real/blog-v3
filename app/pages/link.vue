@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { API_CONFIG } from '~~/app/config/api'
+import { API_CONFIG } from '~/config/api'
 import type { LinkDTO, LinkCategoryDTO, SiteConfig } from '~/types/api'
 import type { Arch } from '~/utils/icon'
 
+// ============================================
+// 1. 初始化
+// ============================================
 const appConfig = useAppConfig()
-const layoutStore = useLayoutStore()
-layoutStore.setAside([])
 
-// 从 API 获取站点配置
+// ============================================
+// 2. API 数据获取
+// ============================================
 const { data: siteConfig } = await useAsyncData(
 	'link-page-site-config',
 	async () => {
@@ -16,7 +19,6 @@ const { data: siteConfig } = await useAsyncData(
 				API_CONFIG.endpoints.siteConfig,
 				{ baseURL: API_CONFIG.baseURL },
 			)
-			// API 返回: { code: 200, data: SiteConfig }
 			if (response?.code === 200 && response?.data) {
 				return response.data as SiteConfig
 			}
@@ -29,9 +31,6 @@ const { data: siteConfig } = await useAsyncData(
 	},
 )
 
-// 从 API 获取友链数据
-// 注意：API 文档说返回数组，但实际返回的是分页格式！
-// 实际返回: { code: 200, data: { list: LinkDTO[], total, page, pageSize } }
 const { data: linksData } = await useAsyncData(
 	'links',
 	async () => {
@@ -40,17 +39,16 @@ const { data: linksData } = await useAsyncData(
 				API_CONFIG.endpoints.links,
 				{
 					baseURL: API_CONFIG.baseURL,
-					query: { pageSize: 999 }, // 获取尽可能多的友链
+					query: { pageSize: 999 },
 				},
 			)
-			// 实际返回的是分页对象，需要取 list 字段
 			if (response?.code === 200 && response?.data) {
 				const data = response.data
 				// 检查是否是分页格式
 				if (data.list && Array.isArray(data.list)) {
 					return data.list as LinkDTO[]
 				}
-				// 如果直接是数组（虽然实际不是）
+				// 如果直接是数组
 				if (Array.isArray(data)) {
 					return data as LinkDTO[]
 				}
@@ -66,8 +64,6 @@ const { data: linksData } = await useAsyncData(
 	},
 )
 
-// 从 API 获取友链分类
-// API 返回: { code: 200, data: LinkCategoryDTO[] } - 直接返回数组,不是分页对象
 const { data: categoriesData } = await useAsyncData(
 	'link-categories',
 	async () => {
@@ -76,7 +72,6 @@ const { data: categoriesData } = await useAsyncData(
 				API_CONFIG.endpoints.linkCategories,
 				{ baseURL: API_CONFIG.baseURL },
 			)
-			// API 返回的是数组,不是分页对象
 			if (response?.code === 200 && response?.data) {
 				return response.data as LinkCategoryDTO[]
 			}
@@ -89,12 +84,14 @@ const { data: categoriesData } = await useAsyncData(
 	},
 )
 
+// ============================================
+// 3. 数据转换层
+// ============================================
 // 转换为组件期望的格式
 const feeds = computed(() => {
 	if (!categoriesData.value || !linksData.value)
 		return []
 
-	// 确保 linksData 是数组
 	const links = Array.isArray(linksData.value) ? linksData.value : []
 	if (links.length === 0) {
 		console.warn('No links data available')
@@ -116,15 +113,15 @@ const feeds = computed(() => {
 				link: link.url,
 				avatar: link.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(link.name)}`,
 				icon: link.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(link.name)}`,
-				feed: link.url, // API 不提供 RSS，使用网站 URL
-				date: '2024', // API 不提供日期，使用默认值
-				archs: link.tag?.name ? [link.tag.name as Arch] : [], // 使用 tag.name 作为技术栈标签
+				feed: link.url,
+				date: '2024',
+				archs: link.tag?.name ? [link.tag.name as Arch] : [],
 			})),
 		}
 	}).filter((group: any) => group.entries.length > 0)
 })
 
-// 构建我的博客信息（从 API 站点配置）
+// 构建我的博客信息
 const myFeed = computed(() => {
 	const config = siteConfig.value
 	if (!config)
@@ -134,10 +131,8 @@ const myFeed = computed(() => {
 	const getFullUrl = (path?: string) => {
 		if (!path)
 			return ''
-		// 如果已经是完整 URL，直接返回
 		if (path.startsWith('http://') || path.startsWith('https://'))
 			return path
-		// 相对路径，拼接 API baseURL
 		return `${API_CONFIG.baseURL}${path}`
 	}
 
@@ -168,7 +163,9 @@ const copyFields = computed(() => {
 	}
 })
 
-// 友链申请表单
+// ============================================
+// 4. 友链申请表单逻辑
+// ============================================
 const linkForm = ref({
 	name: '',
 	url: '',
@@ -182,14 +179,12 @@ const submitStatus = ref<'success' | 'error'>('success')
 
 // 美化错误提示
 function formatErrorMessage(errorMessage: string): string {
-	// 匹配验证错误格式: Key: 'Field' Error:Field validation for 'field' failed on the 'tag' tag
 	const validationMatch = errorMessage.match(/Field validation for '(\w+)' failed on the '(\w+)' tag/)
 
 	if (validationMatch) {
 		const field = validationMatch[1] || ''
 		const tag = validationMatch[2] || ''
 
-		// 字段名称映射
 		const fieldNames: Record<string, string> = {
 			'URL': '网站地址',
 			'Name': '网站名称',
@@ -197,7 +192,6 @@ function formatErrorMessage(errorMessage: string): string {
 			'Description': '网站描述',
 		}
 
-		// 验证标签映射
 		const tagMessages: Record<string, string> = {
 			'url': '格式不正确，请输入完整的网址（如：https://example.com）',
 			'required': '不能为空',
@@ -212,16 +206,13 @@ function formatErrorMessage(errorMessage: string): string {
 		return `${fieldName}${tagMessage}`
 	}
 
-	// 如果包含 "参数无效" 等中文，提取关键部分
 	if (errorMessage.includes('参数无效')) {
-		// 尝试提取更友好的信息
 		if (errorMessage.includes('URL')) {
 			return '网站地址格式不正确，请输入完整的网址（如：https://example.com）'
 		}
 		return '请检查输入信息是否正确'
 	}
 
-	// 其他常见错误
 	const errorMap: Record<string, string> = {
 		'network error': '网络连接失败，请检查网络后重试',
 		'timeout': '请求超时，请稍后重试',
@@ -236,7 +227,6 @@ function formatErrorMessage(errorMessage: string): string {
 		}
 	}
 
-	// 如果都不匹配，返回通用错误信息
 	return '提交失败，请检查信息是否填写正确'
 }
 
@@ -308,7 +298,6 @@ async function submitLinkApply() {
 	}
 	catch (error: any) {
 		submitStatus.value = 'error'
-		// 优先使用响应中的错误信息，然后美化
 		const rawMessage = error.data?.message || error.message || '提交失败，请检查网络连接'
 		submitMessage.value = formatErrorMessage(rawMessage)
 	}
@@ -317,6 +306,13 @@ async function submitLinkApply() {
 	}
 }
 
+// ============================================
+// 5. 副作用层 - Layout 和 SEO 设置
+// ============================================
+const layoutStore = useLayoutStore()
+
+// 初始化时设置
+layoutStore.setAside([])
 useSeoMeta({
 	title: '友链',
 	ogType: 'profile',
@@ -418,9 +414,6 @@ useSeoMeta({
 		</div>
 	</template>
 </Tab>
-
-<!-- 友链页面不需要评论功能，移除或者在需要时添加 post 提供 -->
-<!-- <PostComment /> -->
 </template>
 
 <style lang="scss" scoped>
@@ -508,4 +501,3 @@ useSeoMeta({
 	}
 }
 </style>
-
