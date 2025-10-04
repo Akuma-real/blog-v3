@@ -66,12 +66,6 @@ const blogConfig = {
 	/** 向 <head> 中添加脚本 */
 	scripts: [
 	],
-
-	/** 自己部署的 Twikoo 服务 */
-	twikoo: {
-		envId: 'https://twikoo.zhilu.cyou/',
-		preload: 'https://twikoo.zhilu.cyou/',
-	},
 }
 
 /** 用于生成 OPML 和友链页面配置 */
