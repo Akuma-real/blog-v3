@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { API_CONFIG } from '~/config/api'
-import type { ArticleDetailResponse } from '~/types/api'
 
+// ============================================
+// 1. 初始化和路由
+// ============================================
 const route = useRoute()
-
-const layoutStore = useLayoutStore()
-layoutStore.setAside(['toc'])
-
-// 从路径中提取文章 ID（去除开头的 /）
 const articleId = computed(() => route.path.slice(1))
 
-// 从 API 获取文章详情
+// ============================================
+// 2. API 数据获取
+// ============================================
 const { data: apiResponse } = await useAsyncData(
 	() => `article-${route.path}`,
 	async () => {
@@ -28,7 +27,9 @@ const { data: apiResponse } = await useAsyncData(
 	},
 )
 
-// 转换 API 数据为组件期望的格式
+// ============================================
+// 3. 数据转换层 - 将 API 数据转为组件数据
+// ============================================
 const post = computed(() => {
 	if (!apiResponse.value)
 		return null
@@ -50,7 +51,6 @@ const post = computed(() => {
 			time: (article.reading_time || 1) * 60000,
 			words: article.word_count || 0,
 		},
-		// HTML 内容
 		htmlContent: article.content_html || article.content_md,
 		body: {
 			toc: article.toc || [],
@@ -59,7 +59,6 @@ const post = computed(() => {
 	}
 })
 
-// 转换上一篇/下一篇文章数据
 const prevArticle = computed(() => {
 	const prev = apiResponse.value?.prev_article
 	if (!prev)
@@ -84,29 +83,50 @@ const nextArticle = computed(() => {
 	}
 })
 
-const contentStore = useContentStore()
-const { toc, meta } = storeToRefs(contentStore)
-toc.value = post.value?.body.toc
-meta.value = post.value?.meta
-
 const excerpt = computed(() => post.value?.description || '')
 
-// 向子组件提供 post 数据
-provide('post', post)
+// ============================================
+// 4. 副作用层 - Store 和 SEO 设置
+// ============================================
+const layoutStore = useLayoutStore()
+const contentStore = useContentStore()
+const { toc, meta } = storeToRefs(contentStore)
 
-if (post.value) {
-	useSeoMeta({
-		title: post.value.title,
-		ogType: 'article',
-		ogImage: post.value.image || '',
-		description: post.value.description || '',
-	})
-	layoutStore.setAside(post.value.meta?.aside as WidgetName[] | undefined)
-}
-else {
-	route.meta.title = '404'
-	layoutStore.setAside(['blog-log'])
-}
+// 监听 post 变化,同步更新 store 和 SEO
+watch(post, (newPost) => {
+	if (newPost) {
+		// 更新 content store
+		toc.value = newPost.body.toc ? { links: newPost.body.toc } : { links: [] }
+		meta.value = newPost.meta
+
+		// 更新 layout
+		layoutStore.setAside(['toc'])
+
+		// 更新 SEO meta
+		const seoMeta: Record<string, any> = {
+			title: newPost.title,
+			ogType: 'article',
+			description: newPost.description || '',
+		}
+
+		// 只有当 image 是有效字符串时才设置 ogImage
+		if (newPost.image && typeof newPost.image === 'string') {
+			seoMeta.ogImage = newPost.image
+		}
+
+		useSeoMeta(seoMeta)
+	}
+	else {
+		// 404 情况
+		route.meta.title = '404'
+		layoutStore.setAside(['blog-log'])
+	}
+}, { immediate: true })
+
+// ============================================
+// 5. 向子组件提供数据
+// ============================================
+provide('post', post)
 </script>
 
 <template>
