@@ -1,4 +1,9 @@
 <script setup lang="ts">
+// 禁用自动属性继承，手动控制
+defineOptions({
+	inheritAttrs: false,
+})
+
 const props = defineProps<{
 	totalPages: number
 	expandPages?: number
@@ -24,6 +29,7 @@ onUnmounted(() => {
 
 <template>
 <nav
+	v-bind="$attrs"
 	class="pagination"
 	:class="{ sticky, expand }"
 	:aria-label="`第${page}页，共${totalPages}页`"
