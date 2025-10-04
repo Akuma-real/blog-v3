@@ -1,8 +1,8 @@
-import type { ContentCollectionItem } from '@nuxt/content'
 import { XMLBuilder } from 'fast-xml-parser'
 import blogConfig from '~~/blog.config'
 import { version } from '~~/package.json'
 import { getIsoDatetime } from '~/utils/time'
+import { API_CONFIG } from '~/config/api'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -18,34 +18,47 @@ function getUrl(path: string | undefined) {
 	return new URL(path ?? '', blogConfig.url).toString()
 }
 
-function renderContent(post: ContentCollectionItem) {
+function renderContent(post: any) {
 	return [
-		post.image && `<img src="${post.image}" />`,
+		post.cover && `<img src="${post.cover}" />`,
 		post.description && `<p>${post.description}</p>`,
 		`<a class="view-full" href="${getUrl(post.path)}" target="_blank">点击查看全文</a>`,
 	].join(' ')
 }
 
-export default defineEventHandler(async (event) => {
-	const posts = await queryCollection(event, 'content')
-		.where('stem', 'LIKE', 'posts/%')
-		.order('updated', 'DESC')
-		.limit(blogConfig.feed.limit)
-		.all()
+export default defineEventHandler(async (_event) => {
+	// 从 API 获取文章列表
+	const response = await $fetch<any>(
+		API_CONFIG.endpoints.articles,
+		{
+			baseURL: API_CONFIG.baseURL,
+			query: {
+				pageSize: blogConfig.feed.limit,
+				sortBy: 'updated_at',
+				sortOrder: 'desc',
+			},
+		},
+	)
 
-	const entries = posts.map(post => ({
-		id: getUrl(post.path),
-		title: post.title ?? '',
-		updated: getIsoDatetime(post.updated),
-		author: { name: post.author || blogConfig.author.name },
+	const articles = response.data?.list || []
+
+	const entries = articles.map((article: any) => ({
+		id: getUrl(`/${article.abbrlink || article.id}`),
+		title: article.title ?? '',
+		updated: getIsoDatetime(article.updated_at),
+		author: { name: article.author || blogConfig.author.name },
 		content: {
 			$type: 'html',
-			$: renderContent(post),
+			$: renderContent({
+				cover: article.cover,
+				description: article.summaries?.[0] || '',
+				path: `/${article.abbrlink || article.id}`,
+			}),
 		},
-		link: { $href: getUrl(post.path) },
-		summary: post.description,
-		category: { $term: post.categories?.[0] },
-		published: getIsoDatetime(post.published) ?? getIsoDatetime(post.date),
+		link: { $href: getUrl(`/${article.abbrlink || article.id}`) },
+		summary: article.summaries?.[0] || '',
+		category: { $term: article.post_categories?.[0]?.name },
+		published: getIsoDatetime(article.created_at),
 	}))
 
 	const feed = {

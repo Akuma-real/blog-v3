@@ -1,86 +1,72 @@
-interface StatsEntry {
-	posts: number
-	words: number
-}
+/**
+ * 统计数据聚合接口
+ * 从后端 API 获取数据并聚合统计
+ */
+export default defineEventHandler(async (_event) => {
+	try {
+		const apiBaseURL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8091'
 
-interface CategoryEntry {
-	name: string
-	posts: number
-	children?: CategoryEntry[]
-}
+		// 并行获取归档数据和文章列表
+		const [archiveResponse, articlesResponse] = await Promise.all([
+			$fetch<any>('/api/public/articles/archives', { baseURL: apiBaseURL }),
+			$fetch<any>('/api/public/articles', {
+				baseURL: apiBaseURL,
+				query: { pageSize: 9999, status: 'PUBLISHED' },
+			}),
+		])
 
-export default defineEventHandler(async (event) => {
-	const stats = {
-		total: { posts: 0, words: 0 },
-		annual: <Record<number, StatsEntry>>{},
-		categories: <CategoryEntry[]>[],
-		tags: <string[]>[],
-	}
+		// 处理文章字数统计
+		let totalWords = 0
+		const yearlyWords: Record<string, number> = {}
+		const annualStats: Record<string, { posts: number; words: number }> = {}
 
-	const existedPath = new Map()
+		if (articlesResponse?.code === 200 && articlesResponse.data?.list) {
+			const articles = articlesResponse.data.list
 
-	const posts = await queryCollection(event, 'content').all()
+			articles.forEach((article: any) => {
+				const words = article.word_count || 0
+				totalWords += words
 
-	const findOrCreateCategory = (
-		name: string,
-		tree: CategoryEntry[],
-	): CategoryEntry => {
-		let category = tree.find(entry => entry.name === name)
-		if (!category) {
-			category = { name, posts: 0 }
-			tree.push(category)
-		}
-		return category
-	}
-
-	for (const post of posts) {
-		// 重复路径检测
-		if (existedPath.has(post.path))
-			console.warn('文章存在重复路径', post.path)
-		existedPath.set(post.path, true)
-
-		// 文章/总字数计数
-		stats.total.posts++
-		stats.total.words += post.readingTime.words
-
-		if (!post.date)
-			continue
-
-		// 年文章/年字数计数
-		const year = new Date(post.date).getFullYear()
-		if (!stats.annual[year]) {
-			stats.annual[year] = { posts: 0, words: 0 }
-		}
-
-		stats.annual[year].posts++
-		stats.annual[year].words += post.readingTime.words
-
-		// 分类文章计数
-		const categories = post.categories || []
-		let currentLevel = stats.categories
-
-		for (const [index, categoryName] of categories.entries()) {
-			if (typeof categoryName !== 'string')
-				continue
-
-			const category = findOrCreateCategory(categoryName, currentLevel)
-			category.posts++
-
-			if (index < categories.length - 1) {
-				if (!category.children)
-					category.children = []
-				currentLevel = category.children
-			}
-		}
-
-		// 标签统计
-		const tags = post.tags || []
-		tags.filter((tag: any): tag is string => typeof tag === 'string')
-			.forEach((tag: string) => {
-				if (!stats.tags.includes(tag))
-					stats.tags.push(tag)
+				// 按年份统计字数
+				const year = new Date(article.created_at).getFullYear().toString()
+				yearlyWords[year] = (yearlyWords[year] || 0) + words
 			})
-	}
+		}
 
-	return stats
+		// 处理归档数据，生成年度统计
+		if (archiveResponse?.code === 200 && archiveResponse.data?.list) {
+			const archiveList = archiveResponse.data.list
+
+			// 按年份分组统计
+			archiveList.forEach((item: any) => {
+				const year = item.year.toString()
+				if (!annualStats[year]) {
+					annualStats[year] = { posts: 0, words: 0 }
+				}
+				annualStats[year].posts += item.count || 0
+				annualStats[year].words = yearlyWords[year] || 0
+			})
+		}
+
+		// 返回统计数据
+		return {
+			total: {
+				posts: articlesResponse.data?.total || 0,
+				words: totalWords,
+			},
+			annual: annualStats,
+			categories: [], // 暂不实现分类统计
+			tags: [], // 暂不实现标签统计
+		}
+	}
+	catch (error) {
+		console.error('Failed to fetch statistics:', error)
+		// 返回空统计数据作为降级
+		return {
+			total: { posts: 0, words: 0 },
+			annual: {},
+			categories: [],
+			tags: [],
+		}
+	}
 })
