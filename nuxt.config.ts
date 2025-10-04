@@ -7,6 +7,9 @@ import redirectList from './redirects.json'
 
 // 此处配置无需修改
 export default defineNuxtConfig({
+	// 确保启用 SSR 模式（Vercel/EdgeOne 都支持）
+	ssr: true,
+
 	app: {
 		head: {
 			meta: [
@@ -44,6 +47,7 @@ export default defineNuxtConfig({
 	components: [
 		{ path: '~/components/partial', prefix: 'Z' },
 		{ path: '~/components/zhilu', prefix: 'Zhilu', global: true },
+		{ path: '~/components/content', global: true }, // MDC 组件（保留用于 Key 等）
 		'~/components',
 	],
 
@@ -80,6 +84,8 @@ export default defineNuxtConfig({
 			platform: process.platform,
 			arch: process.arch,
 			ci: process.env.TENCENTCLOUD_RUNENV === 'SCF' ? 'EdgeOne' : ci.name || '',
+			// API 基础 URL，可通过环境变量 NUXT_PUBLIC_API_BASE_URL 覆盖
+			apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8091',
 		},
 	},
 
@@ -105,7 +111,7 @@ export default defineNuxtConfig({
 	// @keep-sorted
 	modules: [
 		'@dxup/nuxt',
-		'@nuxt/content',
+		// '@nuxt/content', // 已改用 API，可选择性保留用于其他内容
 		'@nuxt/icon',
 		'@nuxt/image',
 		'@nuxtjs/color-mode',
@@ -121,27 +127,28 @@ export default defineNuxtConfig({
 		classSuffix: '',
 	},
 
-	content: {
-		build: {
-			markdown: {
-				highlight: false,
-				// @keep-sorted
-				remarkPlugins: {
-					'remark-math': {},
-					'remark-music': {},
-					'remark-reading-time': {},
-				},
-				// @keep-sorted
-				rehypePlugins: {
-					'rehype-katex': {},
-				},
-				toc: { depth: 4, searchDepth: 4 },
-			},
-		},
-		experimental: {
-			sqliteConnector: 'native',
-		},
-	},
+	// 如果不再需要 Nuxt Content，可以删除此配置
+	// content: {
+	// 	build: {
+	// 		markdown: {
+	// 			highlight: false,
+	// 			// @keep-sorted
+	// 			remarkPlugins: {
+	// 				'remark-math': {},
+	// 				'remark-music': {},
+	// 				'remark-reading-time': {},
+	// 			},
+	// 			// @keep-sorted
+	// 			rehypePlugins: {
+	// 				'rehype-katex': {},
+	// 			},
+	// 			toc: { depth: 4, searchDepth: 4 },
+	// 		},
+	// 	},
+	// 	experimental: {
+	// 		sqliteConnector: 'native',
+	// 	},
+	// },
 
 	hooks: {
 		'ready': () => {
@@ -149,21 +156,23 @@ export default defineNuxtConfig({
 ================================
 ${packageJson.name} ${packageJson.version}
 ${packageJson.homepage}
+API 模式已启用 - SSR 支持
 ================================
 `)
 		},
-		'content:file:afterParse': (ctx) => {
-			const permalink = ctx.content.permalink as string
-			if (permalink) {
-				ctx.content.path = permalink
-				return
-			}
-			// 在 URL 中隐藏文件路由自动生成的 /posts 路径前缀
-			if (blogConfig.article.hidePostPrefix) {
-				const realPath = ctx.content.path as string | undefined
-				ctx.content.path = realPath?.replace(/^\/posts/, '')
-			}
-		},
+		// 如果不再需要 Nuxt Content，可以删除此 hook
+		// 'content:file:afterParse': (ctx) => {
+		// 	const permalink = ctx.content.permalink as string
+		// 	if (permalink) {
+		// 		ctx.content.path = permalink
+		// 		return
+		// 	}
+		// 	// 在 URL 中隐藏文件路由自动生成的 /posts 路径前缀
+		// 	if (blogConfig.article.hidePostPrefix) {
+		// 		const realPath = ctx.content.path as string | undefined
+		// 		ctx.content.path = realPath?.replace(/^\/posts/, '')
+		// 	}
+		// },
 	},
 
 	icon: {
