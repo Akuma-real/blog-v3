@@ -1,16 +1,57 @@
 import type ArticleProps from '~/types/article'
 import type { ArticleOrderType } from '~/types/article'
 import { alphabetical } from 'radash'
+import { API_CONFIG } from '~/config/api'
+import type { ArticleListItem } from '~/types/api'
 
-// TODO 支持分页/分类筛选
+/**
+ * 获取文章索引（从 API）
+ * @param path 暂时保留参数以保持兼容性，但不再使用
+ */
 export function useArticleIndex(path = 'posts/%') {
-	return useAsyncData(
+	return useAsyncData<ArticleProps[]>(
 		`index_${path}`,
-		() => queryCollection('content')
-			.where('stem', 'LIKE', path)
-			.select('categories', 'date', 'description', 'image', 'path', 'readingTime', 'recommend', 'title', 'type', 'updated')
-			.all(),
-		{ default: () => [] }, // 不返回 undefined
+		async () => {
+			try {
+				const response = await $fetch<any>(API_CONFIG.endpoints.articles, {
+					baseURL: API_CONFIG.baseURL,
+					query: { pageSize: 999 }, // 获取所有文章用于前端排序和筛选
+				})
+
+				// API 返回结构: { code: 200, message: "...", data: { list: [...], total, page, pageSize } }
+				if (response?.code !== 200 || !response?.data?.list) {
+					console.error('获取文章列表失败:', response?.message)
+					return []
+				}
+
+				const articles: ArticleListItem[] = response.data.list
+
+				// 转换为组件期望的格式
+				return articles.map((item: ArticleListItem) => ({
+					path: `/${item.abbrlink || item.id}`,
+					title: item.title,
+					description: item.summaries?.[0] || '',
+					date: item.created_at,
+					updated: item.updated_at,
+					categories: item.post_categories?.map((c) => c.name) || [],
+					tags: item.post_tags?.map((t) => t.name) || [],
+					type: 'tech' as const,
+					image: item.cover_url || item.top_img_url,
+					recommend: item.home_sort || item.pin_sort,
+					readingTime: {
+						text: `${item.reading_time || 1} min read`,
+						minutes: item.reading_time || 1,
+						time: (item.reading_time || 1) * 60000,
+						words: item.word_count || 0,
+					},
+				}))
+			}
+			catch (error) {
+				console.error('获取文章索引出错:', error)
+				return []
+			}
+		},
+		{ default: () => [] },
 	)
 }
 
@@ -68,3 +109,4 @@ export function getPostTypeClassName(type?: string, options = {
 
 	return `${prefix}-${type}`
 }
+
