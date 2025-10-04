@@ -41,7 +41,13 @@ const { data: linksData } = await useAsyncData(
 			)
 			// API 直接返回数组，不是分页对象
 			if (response?.code === 200 && response?.data) {
-				return response.data as LinkDTO[]
+				// 确保返回的是数组
+				const data = response.data
+				if (Array.isArray(data)) {
+					return data as LinkDTO[]
+				}
+				console.warn('Links data is not an array:', data)
+				return []
 			}
 			return []
 		}
@@ -80,8 +86,15 @@ const feeds = computed(() => {
 	if (!categoriesData.value || !linksData.value)
 		return []
 
+	// 确保 linksData 是数组
+	const links = Array.isArray(linksData.value) ? linksData.value : []
+	if (links.length === 0) {
+		console.warn('No links data available')
+		return []
+	}
+
 	return categoriesData.value.map((category: LinkCategoryDTO) => {
-		const categoryLinks = linksData.value?.filter(
+		const categoryLinks = links.filter(
 			(link: LinkDTO) => link.category?.id === category.id && link.status === 'APPROVED',
 		) || []
 
