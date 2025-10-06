@@ -215,6 +215,14 @@ export default [
 				archs: ['Halo'],
 				date: '2025-09-14',
 			},
+			{
+				author: '喜之梁',
+				desc: '多点关心多点爱',
+				link: 'https://blog.liang.one',
+				icon: 'https://blog.liang.one/favicon.ico',
+				avatar: 'https://bu.dusays.com/2025/10/02/68de1a78e7aa4.webp',
+				date: '2025-10-06',
+			},
 		],
 	},
 ] satisfies FeedGroup[]
