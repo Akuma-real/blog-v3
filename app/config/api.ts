@@ -5,11 +5,6 @@ import type { UseFetchOptions } from 'nuxt/app'
 import type { ApiResponse } from '~/types/api'
 
 export const API_CONFIG = {
-  // 开发环境使用本地 API
-  baseURL: process.env.NODE_ENV === 'development'
-    ? 'http://localhost:8091'
-    : process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8091',
-
   // API 超时时间
   timeout: 10000,
 
@@ -59,8 +54,12 @@ export function useApi<T>(
   url: MaybeRefOrGetter<string>,
   options?: UseFetchOptions<ApiResponse<T>>,
 ) {
+  // 运行时动态获取 API 配置
+  const config = useRuntimeConfig()
+  const baseURL = config.public.apiBaseUrl as string
+
   return useFetch<ApiResponse<T>>(toValue(url), {
-    baseURL: API_CONFIG.baseURL,
+    baseURL,
     ...options,
     // 处理响应,验证状态码
     onResponse({ response }) {

@@ -2,9 +2,10 @@
  * 统计数据聚合接口
  * 从后端 API 获取数据并聚合统计
  */
-export default defineEventHandler(async (_event) => {
+export default defineEventHandler(async (event) => {
 	try {
-		const apiBaseURL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8091'
+		const config = useRuntimeConfig(event)
+		const apiBaseURL = config.public.apiBaseUrl as string
 
 		// 并行获取归档数据和文章列表
 		const [archiveResponse, articlesResponse] = await Promise.all([
