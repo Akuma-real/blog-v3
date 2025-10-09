@@ -36,20 +36,19 @@ layoutStore.setAside(['blog-stats', 'latest-comments'])
 const page = ref(Number(route.query.page || 1))
 const pageSize = 20
 
-const { data, pending, error } = await useFetch<ShuoResponse>(
+// 改为仅在客户端获取，避免 SSG 构建期固化数据
+const { data, pending, error, refresh } = useFetch<ShuoResponse>(
 	() => `/api/shuoshuo`,
 	{
 		query: () => ({ page: page.value, pageSize }),
 		key: () => `shuoshuo-${page.value}-${pageSize}`,
-		// SSR 首屏预取，后续 page 变化在客户端再次获取
+		server: false,
 		watch: [page],
 		default: () => ({ total: 0, items: [] }),
 	},
 )
 
 const totalPages = computed(() => Math.max(1, Math.ceil((data.value?.total || 0) / pageSize)))
-
-
 
 watch(page, (val) => {
 	// 同步到 URL 查询参数，确保可分享/回退
@@ -285,140 +284,214 @@ function formatExtensionUrl(ext?: string, type?: string) {
 		return `https://${e}`
 	return e
 }
+
+// ========== GitHub 仓库分享扩展 ==========
+function parseGithubRepo(raw?: string): { owner: string, repo: string } | null {
+	if (!raw)
+		return null
+	const s = raw.trim()
+	// 裸 owner/repo
+	const bare = s.match(/^[\w.-]+\/[\w.-]+$/)
+	if (bare) {
+		const [owner, repo] = s.split('/')
+		return { owner, repo }
+	}
+	try {
+		const u = new URL(s.startsWith('http') ? s : `https://${s}`)
+		const host = u.hostname.replace(/^www\./, '')
+		if (host !== 'github.com')
+			return null
+		const parts = u.pathname.split('/').filter(Boolean)
+		if (parts.length >= 2)
+			return { owner: parts[0], repo: parts[1] }
+		return null
+	}
+	catch {
+		return null
+	}
+}
+
+function isGithubRepo(raw?: string) {
+	return parseGithubRepo(raw) != null
+}
+
+function toGithubRepoUrl(raw?: string) {
+	const pr = parseGithubRepo(raw)
+	return pr ? `https://github.com/${pr.owner}/${pr.repo}` : formatExtensionUrl(raw)
+}
+
+function getGithubOgImage(raw?: string) {
+	const pr = parseGithubRepo(raw)
+	return pr ? `https://opengraph.githubassets.com/1/${pr.owner}/${pr.repo}` : ''
+}
 </script>
 
 <template>
 <div class="shuoshuo">
+	<!-- 页面横幅 -->
+	<div class="page-banner">
+		<div class="banner-content">
+			<h1>说说</h1>
+			<p>记录生活点滴，分享即时想法</p>
+		</div>
+		<div class="banner-extra">
+			<div class="shuo-stats">
+				<div class="powered-by">
+					Powered by Ech0
+				</div>
+				<div v-if="data?.total" class="shuo-count">
+					共 {{ data.total }} 条说说
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="mobile-only">
 		<ZhiluHeader to="/" suffix="说说" />
 	</div>
 
 	<ClientOnly>
-		<!-- 加载状态 -->
-		<div v-if="pending" class="shuo-loading" aria-busy="true" aria-live="polite">
-			<div class="skeleton-list">
-				<div v-for="i in 4" :key="i" class="skeleton-item card">
-					<div class="skeleton-line skeleton-time" />
-					<div class="skeleton-line skeleton-content" />
-					<div class="skeleton-line skeleton-content short" />
+		<!-- 说说内容区域 - 完全匹配essay页面结构 -->
+		<div class="page-essay">
+			<div class="talk-container">
+				<!-- 加载状态 - 匹配essay页面样式 -->
+				<div v-if="pending" class="loading-container">
+					<div class="loading-spinner" />
+					<p>加载中...</p>
 				</div>
-			</div>
-		</div>
-		<!-- 错误状态 -->
-		<div v-else-if="error" class="shuo-error">
-			<ZError>
-				<template #title>
-					加载失败
-				</template>
-				<template #description>
-					无法获取说说数据，可能是网络原因。
-					<br>
-					<span class="error-detail">{{ error.message }}</span>
-				</template>
-			</ZError>
-		</div>
+				<!-- 错误状态 -->
+				<div v-else-if="error" class="loading-container">
+					<ZError>
+						<template #title>
+							加载失败
+						</template>
+						<template #description>
+							无法获取说说数据，可能是网络原因。
+							<br>
+							<span class="error-detail">{{ error.message }}</span>
+						</template>
+					</ZError>
+				</div>
 
-		<!-- 正常内容 -->
-		<div v-else class="shuo-list">
-			<div v-if="!data?.items?.length" class="shuo-empty">
-				<ZError>
-					<template #title>
-						暂无说说
-					</template>
-					<template #description>
-						还没有发布内容
-					</template>
-				</ZError>
-			</div>
+				<!-- 正常内容 - 使用卡片式布局 -->
+				<div v-else-if="data?.items?.length" class="feed-list">
+					<TransitionGroup appear name="float-in">
+						<article v-for="(item, index) in data?.items" :key="item.id" class="post-card" :style="{ '--delay': `${index * 0.05}s` }">
+							<div class="post-content">
+								<!-- 头部区域：头像 + 博主信息 -->
+								<div class="post-header">
+									<a href="/about" class="avatar-link">
+										<NuxtImg :src="(appConfig.author?.avatar as string)" alt="头像" class="avatar" width="48" height="48" />
+									</a>
+									<div class="post-meta">
+										<a href="/about" class="author-name">{{ appConfig.author?.name || '匿名' }}</a>
+										<div class="post-time">
+											<time>{{ formatShuoTime(item.created_at) }}</time>
+											<span v-if="item.fav_count != null" class="likes">
+												<Icon name="ph:thumbs-up" /> {{ Number(item.fav_count) }}
+											</span>
+										</div>
+									</div>
+								</div>
 
-			<TransitionGroup v-else appear name="float-in" class="feed-list">
-				<article v-for="(item, index) in data?.items" :key="item.id" class="shuo-item card feed-item" :style="{ '--delay': `${index * 0.05}s` }">
-					<!-- 左列：头像（来自 config） -->
-					<div class="mobile-only">
-						<NuxtImg :src="(appConfig.author?.avatar as string)" alt="头像" class="feed-avatar-img" width="48" height="48" />
-					</div>
+								<!-- 内容区域 -->
+								<div class="post-body">
+									<p class="post-text" v-text="item.content" />
 
-					<!-- 右列：内容 -->
-					<div class="feed-content">
-						<header class="shuo-meta">
-							<span class="author">{{ appConfig.author?.name || '匿名' }}</span>
-							<time class="time">{{ formatShuoTime(item.created_at) }}</time>
-							<span v-if="item.fav_count != null" class="likes">
-								<!-- 按接口文档（model.Echo.fav_count 为整数）展示点赞数，统一转为数字显示 -->
-								<Icon name="ph:thumbs-up" /> {{ Number(item.fav_count) }}
-							</span>
-						</header>
+									<!-- 音乐扩展（APlayer / meting-js） -->
+									<div v-if="item.extension_type === 'MUSIC' && item.extension" class="post-music">
+										<div v-if="aplayerReady && parseMusicURL(item.extension)">
+											<meting-js
+												:id="parseMusicURL(item.extension)!.id"
+												:api="METING_API"
+												:server="parseMusicURL(item.extension)!.server"
+												:type="parseMusicURL(item.extension)!.type"
+												preload="none"
+												fixed="false"
+												loop="none"
+												order="list"
+												mini="false"
+											/>
+										</div>
+										<div v-else>
+											<!-- Fallback：网易云外链播放器，避免空白 -->
+											<iframe
+												:title="`音乐 ${item.id}`"
+												:src="getNeteaseEmbed(item.extension)"
+												width="100%"
+												height="86"
+												frameborder="0"
+												allow="autoplay; encrypted-media"
+											/>
+										</div>
+									</div>
 
-						<div class="shuo-content" v-text="item.content" />
+									<!-- B 站视频扩展 -->
+									<div v-else-if="isBilibili(item.extension_type, item.extension)" class="post-bilibili">
+										<iframe
+											:title="`哔哩哔哩 ${item.id}`"
+											:src="getBilibiliEmbed(item.extension)"
+											width="100%"
+											height="100%"
+											frameborder="0"
+											allow="autoplay; encrypted-media"
+											allowfullscreen
+										/>
+									</div>
 
-						<!-- 音乐扩展（APlayer / meting-js） -->
-						<div v-if="item.extension_type === 'MUSIC' && item.extension" class="shuo-music">
-							<div v-if="aplayerReady && parseMusicURL(item.extension)">
-								<meting-js
-									:id="parseMusicURL(item.extension)!.id"
-									:api="METING_API"
-									:server="parseMusicURL(item.extension)!.server"
-									:type="parseMusicURL(item.extension)!.type"
-									preload="none"
-									fixed="false"
-									loop="none"
-									order="list"
-									mini="false"
-								/>
+									<!-- GitHub 仓库扩展（显示 OpenGraph 卡片） -->
+									<div v-else-if="isGithubRepo(item.extension)" class="post-github">
+										<a :href="toGithubRepoUrl(item.extension)" target="_blank" rel="noopener noreferrer" class="post-link">
+											<img :src="getGithubOgImage(item.extension)" alt="GitHub 项目" loading="lazy" decoding="async" class="post-github-og">
+										</a>
+									</div>
+
+									<!-- 单图扩展（当 images 为空时兜底） -->
+									<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="post-images">
+										<NuxtImg :src="(item.extension as string)" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="post-image" />
+									</div>
+
+									<!-- 其他扩展统一展示为外链 -->
+									<div v-else-if="item.extension" class="post-extension">
+										<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="post-link">查看附加内容</a>
+									</div>
+
+									<!-- 多图显示 -->
+									<div v-if="item.images?.length" class="post-images">
+										<NuxtImg
+											v-for="(img, idx) in item.images"
+											:key="idx"
+											:src="(img.image_url as string)"
+											:alt="`图片 ${idx + 1}`"
+											loading="lazy"
+											decoding="async"
+											sizes="(max-width: 768px) 33vw, 240px"
+											class="post-image"
+										/>
+									</div>
+								</div>
 							</div>
-							<div v-else>
-								<!-- Fallback：网易云外链播放器，避免空白 -->
-								<iframe
-									:title="`音乐 ${item.id}`"
-									:src="getNeteaseEmbed(item.extension)"
-									width="100%"
-									height="86"
-									frameborder="0"
-									allow="autoplay; encrypted-media"
-								/>
-							</div>
-						</div>
-
-						<!-- B 站视频扩展 -->
-						<div v-else-if="isBilibili(item.extension_type, item.extension)" class="shuo-bilibili">
-							<iframe
-								:title="`哔哩哔哩 ${item.id}`"
-								:src="getBilibiliEmbed(item.extension)"
-								width="100%"
-								height="100%"
-								frameborder="0"
-								allow="autoplay; encrypted-media"
-								allowfullscreen
-							/>
-						</div>
-
-						<!-- 单图扩展（当 images 为空时兜底） -->
-						<div v-else-if="item.extension_type === 'IMAGE' && item.extension && !item.images?.length" class="shuo-images">
-								<NuxtImg :src="(item.extension as string)" alt="图片" loading="lazy" decoding="async" sizes="(max-width: 768px) 50vw, 320px" class="shuo-image" />
-							</div>
-
-							<!-- 其他扩展统一展示为外链 -->
-							<div v-else-if="item.extension" class="shuo-extension">
-								<a :href="formatExtensionUrl(item.extension, item.extension_type)" target="_blank" rel="noopener noreferrer" class="shuo-link">查看附加内容</a>
-							</div>
-
-							<div v-if="item.images?.length" class="shuo-images">
-								<NuxtImg
-									v-for="(img, idx) in item.images"
-									:key="idx"
-									:src="(img.image_url as string)"
-									:alt="`图片 ${idx + 1}`"
-									loading="lazy"
-									decoding="async"
-									sizes="(max-width: 768px) 33vw, 240px"
-									class="shuo-image"
-								/>
-							</div>
-						</div>
 						</article>
 					</TransitionGroup>
+				</div>
 
-			<ZPagination v-model="page" :total-pages="totalPages" />
+				<!-- 空状态 -->
+				<div v-else class="loading-container">
+					<ZError>
+						<template #title>
+							暂无说说
+						</template>
+						<template #description>
+							还没有发布内容
+						</template>
+					</ZError>
+				</div>
+			</div>
+
+			<!-- 分页 -->
+			<div v-if="data?.items?.length" class="pagination-container">
+				<ZPagination v-model="page" :total-pages="totalPages" />
+			</div>
 		</div>
 	</ClientOnly>
 </div>
@@ -429,38 +502,297 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	margin: 1rem;
 }
 
-.shuo-list {
-	display: grid;
+// 页面横幅样式
+.page-banner {
+	position: relative;
+	overflow: hidden;
+	margin-bottom: 1.5rem;
+	padding: 2rem;
+	border-radius: 1rem;
+	background: linear-gradient(135deg, var(--c-brand-soft, rgb(59 130 246 / 10%)) 0%, var(--c-bg-mute) 100%);
+
+	// 添加微妙的渐变效果
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(circle at 20% 80%, rgb(59 130 246 / 10%) 0%, transparent 50%),
+			radial-gradient(circle at 80% 20%, rgb(139 92 246 / 10%) 0%, transparent 50%);
+		pointer-events: none;
+	}
+}
+
+.banner-content {
+	position: relative;
+	text-align: center;
+	z-index: 1;
+
+	h1 {
+		margin: 0 0 0.5rem;
+		background: linear-gradient(135deg, var(--c-brand), var(--c-brand-2, #8B5CF6));
+		background-clip: text;
+		font-size: 2rem;
+		font-weight: 700;
+		color: var(--c-text-1);
+		-webkit-text-fill-color: transparent;
+	}
+
+	p {
+		opacity: 0.8;
+		margin: 0;
+		font-size: 1rem;
+		color: var(--c-text-2);
+	}
+}
+
+.banner-extra {
+	display: flex;
+	justify-content: center;
+	position: relative;
+	margin-top: 1rem;
+	z-index: 1;
+}
+
+.shuo-stats {
+	display: flex;
+	align-items: center;
 	gap: 1rem;
+	font-size: 0.875rem;
+	color: var(--c-text-2);
+
+	.powered-by {
+		opacity: 0.7;
+	}
+
+	.shuo-count {
+		font-weight: 500;
+		color: var(--c-brand);
+	}
+}
+
+// Essay页面样式的加载容器
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 3rem 1rem;
+	text-align: center;
+
+	.loading-spinner {
+		width: 40px;
+		height: 40px;
+		margin-bottom: 1rem;
+		border: 3px solid var(--c-bg-mute);
+		border-top: 3px solid var(--c-brand);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	p {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--c-text-2);
+	}
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+// Essay页面样式
+.page-essay {
+	margin-bottom: 1rem;
+}
+
+.talk-container {
+	width: 100%;
 }
 
 .feed-list {
 	display: grid;
 	gap: 1rem;
+	width: 100%;
 }
 
-.feed-item {
+// 新的卡片样式
+.post-card {
+	width: 100%;
+	margin-bottom: 1rem;
+	padding: 1rem;
+	border: 1px solid var(--c-border);
+	border-radius: 1rem;
+	background-color: var(--c-bg-soft);
+	transition: all 0.3s ease;
+
+	&:hover {
+		border-color: var(--c-brand-soft);
+		box-shadow: 0 4px 16px rgb(0 0 0 / 15%);
+		transform: translateY(-2px);
+	}
+
+	// 移动端优化
+	@media (max-width: 768px) {
+		margin-bottom: 0.75rem;
+		padding: 0.75rem;
+	}
+}
+
+.post-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.post-header {
 	display: flex;
 	align-items: flex-start;
-	gap: 0.75rem;
-	min-width: 0; // 避免 Flex 容器本身因子项最小宽度导致超出
+	margin-bottom: 0.5rem;
 }
 
-.feed-avatar {
-	display: none;
-}
-
-.feed-avatar-img {
-	flex-shrink: 0;
+.avatar {
 	width: 48px;
 	height: 48px;
+	margin-right: 0.75rem;
 	border-radius: 50%;
 	object-fit: cover;
 }
 
-.feed-content {
+.avatar-link {
+	text-decoration: none;
+	transition: opacity 0.2s ease;
+
+	&:hover {
+		opacity: 0.8;
+	}
+}
+
+.post-meta {
+	display: flex;
 	flex: 1;
-	min-width: 0; // 关键：允许在小屏下收缩，避免右侧内容撑出卡片
+	flex-direction: column;
+}
+
+.author-name {
+	margin-bottom: 0.25rem;
+	font-size: 16px;
+	font-weight: 600;
+	text-decoration: none;
+	color: var(--c-text-1);
+
+	&:hover {
+		text-decoration: underline;
+		color: var(--c-brand);
+	}
+}
+
+.post-time {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-size: 12px;
+	color: var(--c-text-2);
+}
+
+.likes {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	color: var(--c-text-2);
+}
+
+.post-body {
+	margin-top: 0.5rem;
+}
+
+.post-text {
+	overflow-wrap: break-word;
+	margin: 0 0 0.5rem;
+	font-size: 14px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-break: normal;
+	color: var(--c-text-1);
+}
+
+// 扩展内容样式
+.post-music {
+	overflow: hidden;
+	margin-top: 0.5rem;
+	border-radius: 0.5rem;
+}
+
+.post-bilibili {
+	overflow: hidden;
+	aspect-ratio: 16 / 9;
+	margin-top: 0.5rem;
+	border-radius: 0.5rem;
+
+	/* 桌面端优化：缩小为原来的3/4 */
+	@media (min-width: 768px) {
+		max-width: 75%;
+		max-height: 33.75vw;
+		margin: 0.5rem auto 0;
+	}
+}
+
+.post-bilibili iframe {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.post-github {
+	margin-top: 0.5rem;
+
+	@media (min-width: 768px) {
+		overflow: hidden;
+		width: 75%;
+		margin: 0.5rem auto 0;
+		border-radius: 0.5rem;
+	}
+}
+
+.post-github-og {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 0.5rem;
+	transition: transform 0.2s ease;
+}
+
+.post-images {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+
+	.post-image {
+		width: 100%;
+		height: 100%;
+		border-radius: 0.5rem;
+		object-fit: cover;
+	}
+}
+
+.post-extension {
+	margin-top: 0.5rem;
+}
+
+.post-link {
+	text-decoration: underline;
+	color: var(--c-brand);
+
+	&:hover {
+		color: var(--c-brand-2);
+	}
+}
+
+.pagination-container {
+	display: flex;
+	justify-content: center;
+	margin-top: 2rem;
 }
 
 .shuo-timeline {
@@ -477,7 +809,6 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	width: 2px;
 	background: var(--c-text-3);
 }
-
 
 .timeline-group {
 	position: relative;
@@ -503,14 +834,40 @@ function formatExtensionUrl(ext?: string, type?: string) {
 
 .shuo-item {
 	position: relative;
-	padding: 1rem;
+	padding: 1.5rem;
+	border: 1px solid var(--c-border);
+	border-radius: 1rem;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+	background: var(--c-bg-soft);
+	transition: all 0.3s ease;
+
+	// 添加微妙的渐变背景
+	&::before {
+		content: "";
+		position: absolute;
+		opacity: 0;
+		inset: 0;
+		border-radius: 1rem;
+		background:
+			linear-gradient(
+				135deg,
+				rgb(255 255 255 / 10%) 0%,
+				transparent 100%
+			);
+		transition: opacity 0.3s ease;
+		pointer-events: none;
+	}
+
+	&:hover {
+		border-color: var(--c-brand-soft);
+		box-shadow: 0 4px 16px rgb(0 0 0 / 15%);
+		transform: translateY(-2px);
+
+		&::before {
+			opacity: 1;
+		}
+	}
 }
-
-
-.shuo-item::before {
-	content: none;
-}
-
 
 .shuo-meta {
 	display: flex;
@@ -578,6 +935,13 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	aspect-ratio: 16 / 9;
 	margin-top: 0.5rem;
 	border-radius: 0.5rem;
+
+	/* 桌面端优化：缩小为原来的3/4 */
+	@media (min-width: 768px) {
+		max-width: 75%; /* 缩小为原来的3/4宽度 */
+		max-height: 33.75vw; /* 保持16:9比例下的3/4高度 */
+		margin: 0.5rem auto 0; /* 居中显示 */
+	}
 }
 
 .shuo-bilibili iframe {
@@ -586,23 +950,58 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	height: 100%;
 }
 
+.shuo-github {
+	margin-top: 0.5rem;
+
+	/* 桌面端容器优化，确保卡片完整显示且为原来的3/4大小 */
+	@media (min-width: 768px) {
+		overflow: hidden;
+		width: 75%; /* 缩小为原来的3/4 */
+		margin: 0.5rem auto 0; /* 居中显示 */
+		border-radius: 0.5rem;
+	}
+}
+
+.shuo-github-og {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 0.5rem;
+	transition: transform 0.2s ease;
+}
+
 // 骨架屏
 .skeleton-list {
 	display: grid;
 	gap: 1rem;
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
 }
 
 .skeleton-item {
-	padding: 1rem;
+	padding: 1.5rem;
+	border: 1px solid var(--c-border);
+	border-radius: 1rem;
+	background: var(--c-bg-soft);
 }
 
 .skeleton-line {
 	height: 0.9rem;
 	border-radius: 0.4rem;
-	background: var(--c-bg-mute);
+	background:
+		linear-gradient(
+			90deg,
+			var(--c-bg-mute) 25%,
+			var(--c-bg-soft) 50%,
+			var(--c-bg-mute) 75%
+		);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
 
 	&.skeleton-time {
 		width: 30%;
+		height: 0.8rem;
 		margin-bottom: 0.6rem;
 	}
 
@@ -614,5 +1013,10 @@ function formatExtensionUrl(ext?: string, type?: string) {
 	&.short {
 		width: 70%;
 	}
+}
+
+@keyframes shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
 }
 </style>
