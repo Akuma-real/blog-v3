@@ -1,24 +1,24 @@
 <script setup lang="ts">
 // 新接口响应数据结构定义（https://api.nsmao.net/api/ip/query）
 interface NsmaoIpData {
-    ip: string
-    country: string
-    prov: string
-    city: string
-    district: string
-    adcode: number
-    lat: number
-    lng: number
-    /** 兼容旧 UI 逻辑：若上游未来补充 isp，则可直接显示 */
-    isp?: string
+	ip: string
+	country: string
+	prov: string
+	city: string
+	district: string
+	adcode: number
+	lat: number
+	lng: number
+	/** 兼容旧 UI 逻辑：若上游未来补充 isp，则可直接显示 */
+	isp?: string
 }
 
 interface NsmaoIpResponse {
-    code: number
-    msg: string
-    data: NsmaoIpData
-    exec_time: number
-    ip: string
+	code: number
+	msg: string
+	data: NsmaoIpData
+	exec_time: number
+	ip: string
 }
 
 // 从运行时配置读取公开的 key（需在环境变量中提供 NUXT_PUBLIC_IPIP_KEY）
@@ -64,24 +64,26 @@ const isReady = computed(() => Boolean(ipInfo.value?.data))
 const hostLat = Number.isFinite(Number(bloggerLat)) ? Number(bloggerLat) : 32.993421
 const hostLng = Number.isFinite(Number(bloggerLng)) ? Number(bloggerLng) : 120.640762
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const toRad = (d: number) => (d * Math.PI) / 180
-    const R = 6371 // 地球半径（公里）
-    const dLat = toRad(lat2 - lat1)
-    const dLon = toRad(lon2 - lon1)
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
+	const toRad = (d: number) => (d * Math.PI) / 180
+	const R = 6371 // 地球半径（公里）
+	const dLat = toRad(lat2 - lat1)
+	const dLon = toRad(lon2 - lon1)
+	const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+	return R * c
 }
 const distanceKm = computed(() => {
-    const lat = ipInfo.value?.data?.lat
-    const lng = ipInfo.value?.data?.lng
-    if (typeof lat !== 'number' || typeof lng !== 'number') return null
-    return haversineKm(lat, lng, hostLat, hostLng)
+	const lat = ipInfo.value?.data?.lat
+	const lng = ipInfo.value?.data?.lng
+	if (typeof lat !== 'number' || typeof lng !== 'number')
+		return null
+	return haversineKm(lat, lng, hostLat, hostLng)
 })
 const distanceText = computed(() => {
-    const d = distanceKm.value
-    if (d == null) return ''
-    return d >= 100 ? `${Math.round(d)} 公里` : `${Math.round(d * 10) / 10} 公里`
+	const d = distanceKm.value
+	if (d == null)
+		return ''
+	return d >= 100 ? `${Math.round(d)} 公里` : `${Math.round(d * 10) / 10} 公里`
 })
 
 const detailOpen = ref(false)
@@ -160,7 +162,6 @@ watch(hasDetail, (value) => {
 	padding: 0.2rem 0;
 	outline: none;
 
-
 	&:focus-visible {
 		border-radius: 0.6rem;
 		box-shadow: 0 0 0 0.12rem var(--c-primary);
@@ -231,5 +232,4 @@ watch(hasDetail, (value) => {
 .detail-expand :deep(.toggle-btn) {
 	cursor: pointer;
 }
-
 </style>
