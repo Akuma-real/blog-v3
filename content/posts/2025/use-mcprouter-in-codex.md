@@ -3,7 +3,7 @@ title: use-mcprouter-in-codex
 description: 讲述关于 use-mcprouter-in-codex 的实践，并根据 AI、MCP、Codex 给出经验分享与坑位总结。
 date: 2025-09-30 11:27:49
 updated: 2025-09-30 11:27:49
-image: 
+image:
 categories: [经验分享]
 tags: [ai, mcp, codex]
 ---
@@ -112,7 +112,10 @@ npx @playwright/mcp@latest
 ```toml
 [mcp_servers.mcp-router]
 command = "C:\\Program Files\\nodejs\\node.exe"
-args = ["C:\\Users\\<你的用户名>\\AppData\\Roaming\\npm\\node_modules\\mcpr-cli\\dist\\mcpr.js", "connect"]
+args = [
+  "C:\\Users\\<你的用户名>\\AppData\\Roaming\\npm\\node_modules\\mcpr-cli\\dist\\mcpr.js",
+  "connect"
+]
 env = { SystemRoot = "C:\\WINDOWS", COMSPEC = "C:\\WINDOWS\\system32\\cmd.exe", MCPR_TOKEN = "<你的_MCPR_TOKEN>" }
 ```
 
@@ -121,7 +124,10 @@ env = { SystemRoot = "C:\\WINDOWS", COMSPEC = "C:\\WINDOWS\\system32\\cmd.exe", 
 ```toml
 [mcp_servers.mcp-router]
 command = "node"
-args = ["C:\\Users\\<你的用户名>\\AppData\\Roaming\\npm\\node_modules\\mcpr-cli\\dist\\mcpr.js", "connect"]
+args = [
+  "C:\\Users\\<你的用户名>\\AppData\\Roaming\\npm\\node_modules\\mcpr-cli\\dist\\mcpr.js",
+  "connect"
+]
 env = { SystemRoot = "C:\\WINDOWS", COMSPEC = "C:\\WINDOWS\\system32\\cmd.exe", MCPR_TOKEN = "<你的_MCPR_TOKEN>" }
 ```
 注意：

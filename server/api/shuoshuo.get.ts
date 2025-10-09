@@ -37,16 +37,16 @@ export default defineEventHandler(async (event): Promise<ShuoResponse> => {
 		}
 
 		// 远端统一返回 { code, msg, data: { total, items } }
-    	const data = remote.data || {}
-    	const total = Number(data.total || 0)
-    	const items = Array.isArray(data.items) ? (data.items as any[]).map((it) => {
-    		// 根据 Swagger 文档（model.Echo.fav_count: integer），后端应返回整数。
-    		// 为防止偶发的类型不一致（如字符串"0"），在服务端统一归一化为 number，避免前端显示异常。
-    		const fav = typeof it?.fav_count === 'number' ? it.fav_count : Number(it?.fav_count ?? 0) || 0
-    		return { ...it, fav_count: fav } as ShuoItem
-    	}) : []
+		const data = remote.data || {}
+		const total = Number(data.total || 0)
+		const items = Array.isArray(data.items) ? (data.items as any[]).map((it) => {
+			// 根据 Swagger 文档（model.Echo.fav_count: integer），后端应返回整数。
+			// 为防止偶发的类型不一致（如字符串"0"），在服务端统一归一化为 number，避免前端显示异常。
+			const fav = typeof it?.fav_count === 'number' ? it.fav_count : Number(it?.fav_count ?? 0) || 0
+			return { ...it, fav_count: fav } as ShuoItem
+		}) : []
 
-    	return { total, items } as ShuoResponse
+		return { total, items } as ShuoResponse
 	}
 	catch (error) {
 		console.error('[shuoshuo] 获取失败:', error)

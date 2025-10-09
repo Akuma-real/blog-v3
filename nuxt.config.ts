@@ -89,12 +89,12 @@ export default defineNuxtConfig({
 	},
 
 	// @keep-sorted
-		routeRules: {
-			...Object.entries(redirectList as Record<string, string>)
-				.reduce<NitroConfig['routeRules']>((acc, [from, to]: [string, string]) => {
-					acc![from] = { redirect: { to, statusCode: 308 } }
-					return acc
-				}, {}),
+	routeRules: {
+		...Object.entries(redirectList as Record<string, string>)
+			.reduce<NitroConfig['routeRules']>((acc, [from, to]: [string, string]) => {
+				acc![from] = { redirect: { to, statusCode: 308 } }
+				return acc
+			}, {}),
 		'/api/stats': { prerender: true, headers: { 'Content-Type': 'application/json' } },
 		'/atom.xml': { prerender: true, headers: { 'Content-Type': 'application/xml' } },
 		'/favicon.ico': { redirect: { to: blogConfig.favicon } },
@@ -108,7 +108,7 @@ export default defineNuxtConfig({
 			platform: process.platform,
 			arch: process.arch,
 			ci: process.env.TENCENTCLOUD_RUNENV === 'SCF' ? 'EdgeOne' : ci.name || '',
-			/** IP 查询接口 Key（在浏览器侧使用）*/
+			/** IP 查询接口 Key（在浏览器侧使用） */
 			ipipKey: process.env.NUXT_PUBLIC_IPIP_KEY,
 			/** 博主坐标（在浏览器侧使用），用于计算距离 */
 			bloggerLat: process.env.NUXT_PUBLIC_BLOGGER_LAT || '39.906217',
