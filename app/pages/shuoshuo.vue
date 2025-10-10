@@ -36,16 +36,28 @@ layoutStore.setAside(['blog-stats', 'latest-comments'])
 const page = ref(Number(route.query.page || 1))
 const pageSize = 20
 
-// 改为仅在客户端获取，避免 SSG 构建期固化数据
-const { data, pending, error, refresh } = useFetch<ShuoResponse>(
-	() => `/api/shuoshuo`,
-	{
-		query: () => ({ page: page.value, pageSize }),
-		key: () => `shuoshuo-${page.value}-${pageSize}`,
-		server: false,
-		watch: [page],
-		default: () => ({ total: 0, items: [] }),
-	},
+// 数据获取器：SSG 直连远端 Ech0 接口，不再通过站点内部 API
+async function fetchShuoshuo(p: number, ps: number): Promise<ShuoResponse> {
+	const remote = await $fetch<{ code?: number, data?: { total?: number, items?: any[] } }>('https://memo.june.ink/api/echo/page', {
+		query: { page: p, pageSize: ps },
+		headers: { Accept: 'application/json' },
+	})
+	const data = remote?.data || {}
+	const total = Number(data.total || 0)
+	const items = Array.isArray(data.items)
+		? data.items.map((it: any) => ({
+				...it,
+				fav_count: typeof it?.fav_count === 'number' ? it.fav_count : Number(it?.fav_count ?? 0) || 0,
+			}))
+		: []
+	return { total, items }
+}
+
+// 仅在客户端获取，避免 SSG 构建期固化数据
+const { data, pending, error, refresh } = useAsyncData<ShuoResponse>(
+	() => `shuoshuo-${page.value}-${pageSize}`,
+	() => fetchShuoshuo(page.value, pageSize),
+	{ server: false, watch: [page], default: () => ({ total: 0, items: [] }) },
 )
 
 const totalPages = computed(() => Math.max(1, Math.ceil((data.value?.total || 0) / pageSize)))
