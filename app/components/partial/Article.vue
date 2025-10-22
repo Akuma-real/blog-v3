@@ -4,11 +4,8 @@ import type ArticleProps from '~/types/article'
 const props = defineProps<{ useUpdated?: boolean } & ArticleProps>()
 
 const appConfig = useAppConfig()
-const initialNow = useInitialNow()
 
-const showAllDate = computed(() => isTimeDiffSignificant(props.date, props.updated, 0.6, initialNow.value))
-const publishedDateText = computed(() => getPostDate(props.date, initialNow.value))
-const updatedDateText = computed(() => getPostDate(props.updated, initialNow.value))
+const showAllDate = isTimeDiffSignificant(props.date, props.updated)
 
 const categoryLabel = computed(() => props.categories?.[0])
 const categoryColor = computed(() => appConfig.article.categories[categoryLabel.value!]?.color)
@@ -28,24 +25,17 @@ const categoryIcon = computed(() => getCategoryIcon(categoryLabel.value))
 		</p>
 
 		<div class="article-info">
-			<time
-				v-if="showAllDate || !useUpdated"
-				:datetime="getIsoDatetime(date)"
-				:title="getLocaleDatetime(date)"
-			>
-				<Icon name="ph:calendar-dots-bold" />
-				{{ publishedDateText }}
-			</time>
+			<ZDate
+				v-if="date && (showAllDate || !useUpdated)"
+				:date="date"
+				icon="ph:calendar-dots-bold"
+			/>
 
-			<time
-				v-if="showAllDate || useUpdated"
-				:class="{ 'use-updated': useUpdated }"
-				:datetime="getIsoDatetime(updated)"
-				:title="getLocaleDatetime(updated)"
-			>
-				<Icon name="ph:calendar-plus-bold" />
-				{{ updatedDateText }}
-			</time>
+			<ZDate
+				v-if="updated && (showAllDate || useUpdated)"
+				:date="updated"
+				icon="ph:calendar-plus-bold"
+			/>
 
 			<!-- 带查询参数时会水合错误 -->
 			<ClientOnly>
