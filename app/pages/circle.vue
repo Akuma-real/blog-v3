@@ -117,7 +117,7 @@ async function fetchData() {
 		// 按作者分组（兼容 noUncheckedIndexedAccess）
 		articlesByAuthor.value = allArticles.value.reduce<Record<string, any[]>>((acc, article) => {
 			const key = article.author || ''
-			const list = acc[key] ?? (acc[key] = [])
+			const list = (acc[key] ?? (acc[key] = [])) as any[]
 			list.push(article)
 			return acc
 		}, {})
@@ -128,7 +128,8 @@ async function fetchData() {
 		// 设置最新更新日期
 		if (allArticles.value.length > 0) {
 			const sortedArticles = [...allArticles.value].sort((a, b) => +new Date(b.created) - +new Date(a.created))
-			lastUpdatedDate.value = formatDate(sortedArticles[0]?.created) || formatDate(lastUpdated)
+			const top = sortedArticles[0]
+			lastUpdatedDate.value = formatDate(top?.created || lastUpdated)
 		}
 		else if (lastUpdated) {
 			lastUpdatedDate.value = formatDate(lastUpdated)
@@ -249,7 +250,7 @@ const selectedArticles = computed(() => {
 
 		<!-- 作者模态框 - 时间线样式 -->
 		<Transition name="modal">
-			<div v-if="showAvatarPopup && selectedAuthor && articlesByAuthor[selectedAuthor]" id="avatar-popup" class="modal" @click="closeAvatarPopup">
+			<div v-if="showAvatarPopup && selectedAuthor && selectedArticles.length" id="avatar-popup" class="modal" @click="closeAvatarPopup">
 				<div class="modal-content" @click.stop>
 					<div class="modal-header">
 						<NuxtImg :src="selectedAuthorAvatar" :alt="selectedAuthor" loading="lazy" class="modal-avatar-img" />
