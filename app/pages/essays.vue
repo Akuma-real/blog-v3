@@ -277,7 +277,8 @@ async function fetchTalks() {
 		const items = Array.isArray(remote?.data?.items) ? (remote.data.items as EchoItem[]) : []
 		const formattedTalks: TalkItem[] = items.map((it) => {
 			const content = formatContentFromEch0(it)
-			const username = String(it?.username || appConfig.author?.name || '匿名')
+				// 强制使用站点作者名（忽略后端 username），保持展示统一
+				const username = String(appConfig.author?.name || '匿名')
 			const avatar = String((appConfig.author?.avatar as string) || '')
 			const date = formatTime(String(it?.created_at || ''))
 			const tagNames = Array.isArray(it?.tags)
