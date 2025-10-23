@@ -31,6 +31,9 @@ const copyFields = {
 	<ZhiluHeader to="/" suffix="友链" />
 </div>
 
+<!-- 友链顶部展示卡片（按目录前缀自动注册为 CardFriendLinksBanner） -->
+<CardFriendLinksBanner />
+
 <FeedGroup :feeds />
 
 <Tab :tabs="['我的博客信息', '申请友链']" center>
