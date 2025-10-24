@@ -23,6 +23,7 @@ interface Conn {
 	isLeader: boolean
 	leaderBeatTimer: number | null
 	lastLeaderTs: number
+	connectKickTimer?: number | null
 	ensureConnected: () => void
 	ensurePresence: () => void
 	stepDown: () => void
@@ -124,6 +125,7 @@ function createConn(room: string): Conn {
 	let isLeader = false
 	let leaderBeatTimer: number | null = null
 	let lastLeaderTs = 0
+	let connectKickTimer: number | null = null
 
 	const cleanupTimers = () => {
 		if (hbTimer != null) { clearInterval(hbTimer); hbTimer = null }
@@ -323,6 +325,19 @@ function createConn(room: string): Conn {
 		}
 	}
 
+	// 在没有其他标签页竞争的场景下，确保尽快发起一次连接尝试
+	const ensurePresenceWithKick = () => {
+		ensurePresence()
+		if (connectKickTimer != null)
+			clearTimeout(connectKickTimer)
+		connectKickTimer = window.setTimeout(() => {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				// 没有连接则主动尝试（即使不是 leader，WS 层会被后续 stepDown 关闭）
+				try { ensureConnected() } catch { }
+			}
+		}, 350)
+	}
+
 	const release = () => {
 		conn.refs -= 1
 		if (conn.refs <= 0) {
@@ -354,8 +369,9 @@ function createConn(room: string): Conn {
 		isLeader,
 		leaderBeatTimer,
 		lastLeaderTs,
+		connectKickTimer,
 		ensureConnected,
-		ensurePresence,
+		ensurePresence: ensurePresenceWithKick,
 		stepDown,
 		release,
 	}
