@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import PresenceInfo from '~/components/partial/PresenceInfo.vue'
+
 const appConfig = useAppConfig()
-const { count: liveCount, connecting } = useLiveRoom({ room: 'global' })
+// 页脚在线人数部分完全由 PresenceInfo 实现
 </script>
 
 <template>
@@ -21,10 +23,7 @@ const { count: liveCount, connecting } = useLiveRoom({ room: 'global' })
 		</div>
 	</nav>
 	<div class="footer-meta">
-		<p class="online" aria-live="polite">
-			<span class="dot" :class="{ on: !connecting }" aria-hidden="true" />
-			在线 {{ liveCount }} 人
-		</p>
+		<PresenceInfo />
 		<p v-html="appConfig.footer.copyright" />
 	</div>
 </footer>
@@ -73,29 +72,6 @@ const { count: liveCount, connecting } = useLiveRoom({ room: 'global' })
 
 	.footer-meta p {
 		margin: 0.5em;
-	}
-
-	.online {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4em;
-		padding: 0.2em 0.6em;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--c-primary) 10%, transparent);
-		font-size: 0.85em;
-		color: var(--c-primary);
-	}
-
-	.online .dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 999px;
-		box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-primary) 12%, transparent);
-		background: var(--c-text-3);
-	}
-
-	.online .dot.on {
-		background: var(--c-primary);
 	}
 }
 </style>

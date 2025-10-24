@@ -113,6 +113,8 @@ export default defineNuxtConfig({
 			/** 博主坐标（在浏览器侧使用），用于计算距离 */
 			bloggerLat: process.env.NUXT_PUBLIC_BLOGGER_LAT || '39.906217',
 			bloggerLng: process.env.NUXT_PUBLIC_BLOGGER_LNG || '116.391275',
+			/** 网关基础地址（浏览器端使用） */
+			gatewayOrigin: process.env.NUXT_PUBLIC_GATEWAY_ORIGIN || 'https://connect.june.ink',
 		},
 	},
 

@@ -4,6 +4,10 @@
 <ZSidebar />
 <div id="content">
 	<main id="main-content">
+		<!-- 加入当前页面房间（仅客户端）用于 Presence 统计 -->
+		<ClientOnly>
+			<ZRoomPresence />
+		</ClientOnly>
 		<NuxtPage />
 		<ZFooter />
 	</main>
