@@ -11,6 +11,7 @@ function join(room: string) {
 	}
 	const conn = useLiveRoom({ room })
 	holder.value = conn
+	try { conn.connect() } catch {}
 }
 
 onMounted(() => {
