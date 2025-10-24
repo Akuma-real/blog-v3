@@ -5,18 +5,27 @@ import NumberTransition from '~/components/partial/NumberTransition.vue'
 const { count, connecting, connected } = useGatewayOnline()
 
 // 房间榜单（可选，接口缺省时显示占位）
-// 房间榜单：直接请求网关 HTTP 聚合接口 /v1/rooms/active?limit=10（仅客户端）
+// 房间榜单：改为直接读取 /v1/activity/rooms，保证实时反映任意房间（不依赖额外聚合）
 const { public: pub } = useRuntimeConfig()
 const roomsEndpoint = computed(() => {
 	const origin = pub.gatewayOrigin || location.origin
-	return `${origin.replace(/\/$/, '')}/v1/rooms/active?limit=10`
+	return `${origin.replace(/\/$/, '')}/v1/activity/rooms`
 })
-const { data: roomsRaw, status, refresh } = useFetch<{ room: string, count: number, path: string, title: string }[]>(roomsEndpoint, {
+const { data: roomsRaw, status, refresh } = useFetch<{ rooms: string[], room_count: Record<string, number> }>(roomsEndpoint, {
 	server: false,
 	lazy: true,
-	default: () => [],
+	default: () => ({ rooms: [], room_count: {} }),
 })
-const rooms = computed(() => (roomsRaw.value || []).filter(r => (r.room || r.path) && (r.room || '').toLowerCase() !== 'global'))
+const rooms = computed(() => {
+	const raw = roomsRaw.value
+	if (!raw)
+		return []
+	const entries = Object.entries(raw.room_count || {})
+		.map(([room, count]) => ({ room, path: room, title: room, count: Number(count) || 0 }))
+		.filter(r => r.room && r.room.toLowerCase() !== 'global')
+		.sort((a, b) => b.count - a.count)
+	return entries.slice(0, 10)
+})
 </script>
 
 <template>

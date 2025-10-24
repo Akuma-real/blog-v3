@@ -141,7 +141,10 @@ function createConn(room: string): Conn {
 	}
 
 	const startHeartbeat = (ttl?: number) => {
-		const ms = !ttl || !Number.isFinite(ttl) ? 15000 : Math.min(30000, Math.max(5000, ttl * 1000 - 1000))
+		// 遵循 ActiveNow 建议：每 max(5s, floor(ttl/2)) 发送 hb，避免贴近 TTL 发生抖动误判
+		const ms = !ttl || !Number.isFinite(ttl)
+			? 15000
+			: Math.max(5000, Math.floor((ttl * 1000) / 2))
 		if (hbTimer != null)
 			clearInterval(hbTimer)
 		hbTimer = window.setInterval(sendHeartbeat, ms)

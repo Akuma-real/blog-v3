@@ -6,6 +6,9 @@ const route = useRoute()
 const holder = shallowRef<ReturnType<typeof useLiveRoom> | null>(null)
 
 function join(room: string) {
+	if (typeof window !== 'undefined' && localStorage.getItem('presenceDebug')) {
+		console.info('[Room Presence] join', room)
+	}
 	const conn = useLiveRoom({ room })
 	holder.value = conn
 }
