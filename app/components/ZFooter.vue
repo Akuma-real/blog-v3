@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import PresenceInfo from '~/components/partial/PresenceInfo.vue'
-
 const appConfig = useAppConfig()
-// 页脚在线人数部分完全由 PresenceInfo 实现
 </script>
 
 <template>
@@ -23,7 +20,6 @@ const appConfig = useAppConfig()
 		</div>
 	</nav>
 	<div class="footer-meta">
-		<PresenceInfo />
 		<p v-html="appConfig.footer.copyright" />
 	</div>
 </footer>

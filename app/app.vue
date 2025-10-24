@@ -4,10 +4,7 @@
 <ZSidebar />
 <div id="content">
 	<main id="main-content">
-		<!-- 加入当前页面房间（仅客户端）用于 Presence 统计 -->
-		<ClientOnly>
-			<ZRoomPresence />
-		</ClientOnly>
+		<!-- 按文章房间 Presence 已下线，改为全站在线通道（见 PresenceInfo） -->
 		<NuxtPage />
 		<ZFooter />
 	</main>

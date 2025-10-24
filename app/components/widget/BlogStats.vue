@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { NuxtTime } from '#components'
+import NumberTransition from '~/components/partial/NumberTransition.vue'
 
 const appConfig = useAppConfig()
 const runtimeConfig = useRuntimeConfig()
 
 const { data: stats } = useFetch('/api/stats')
-// 实时在线人数（全站房间）
-const { count: liveCount, connecting } = useLiveRoom({ room: 'global' })
+// 实时在线人数（全站），使用新通道
+const { count: liveCount, connecting } = useGatewayOnline()
 
 const yearlyTip = computed(() => {
 	if (!stats.value)
@@ -32,9 +33,13 @@ const statWords = {
 	tip: yearlyTip,
 }
 const statOnline = {
-	label: '在线人数',
-	value: computed(() => connecting.value ? '连接中…' : (Number.isFinite(liveCount.value as number) ? String(liveCount.value) : '—')),
-	tip: '当前全站在线人数',
+    label: '在线人数',
+    value: computed(() => h(
+        'span',
+        { class: 'online-trigger', 'aria-busy': connecting.value },
+        connecting.value ? '连接中…' : h(NumberTransition, { value: Number(liveCount.value) }),
+    )),
+    tip: '当前全站在线人数',
 }
 
 const blogStatsRow1 = [statRuntime, statUpdated]
@@ -53,5 +58,15 @@ const blogStatsRow2 = [statWords, statOnline]
 <style scoped>
 .stats-stack > :not(:first-child) {
 	margin-top: 0.25rem;
+}
+
+.online-trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25em;
+	padding: 0.1em 0.6em;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+	color: var(--c-primary);
 }
 </style>
