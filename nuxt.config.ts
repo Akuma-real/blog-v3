@@ -84,6 +84,10 @@ export default defineNuxtConfig({
 		'@/assets/css/reusable.scss',
 	],
 
+	experimental: {
+		typescriptPlugin: true,
+	},
+
 	features: {
 		inlineStyles: false,
 	},
@@ -153,7 +157,6 @@ export default defineNuxtConfig({
 
 	// @keep-sorted
 	modules: [
-		'@dxup/nuxt',
 		'@nuxt/content',
 		'@nuxt/icon',
 		'@nuxt/image',
