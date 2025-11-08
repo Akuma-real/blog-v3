@@ -1,4 +1,5 @@
 import type { FeedEntry } from './app/types/feed'
+import { zhCN } from 'date-fns/locale'
 
 const basicConfig = {
 	title: '六月墨语',
@@ -97,3 +98,5 @@ export const myFeed: FeedEntry = {
 }
 
 export default blogConfig
+
+export const dateLocale = zhCN
