@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NuxtTime } from '#components'
+import { ZDate } from '#components'
 import NumberTransition from '~/components/partial/NumberTransition.vue'
 
 const appConfig = useAppConfig()
@@ -24,7 +24,11 @@ const statRuntime = {
 }
 const statUpdated = {
 	label: '上次更新',
-	value: () => h(NuxtTime, { datetime: runtimeConfig.public.buildTime, relative: true }),
+	value: () => h(ZDate, {
+		date: runtimeConfig.public.buildTime,
+		relative: true,
+		tipPrefix: '构建于',
+	}),
 	tip: computed(() => `构建于${getLocaleDatetime(runtimeConfig.public.buildTime)}`),
 }
 const statWords = {
@@ -33,13 +37,13 @@ const statWords = {
 	tip: yearlyTip,
 }
 const statOnline = {
-    label: '在线人数',
-    value: computed(() => h(
-        'span',
-        { class: 'online-trigger', 'aria-busy': connecting.value },
-        connecting.value ? '连接中…' : h(NumberTransition, { value: Number(liveCount.value) }),
-    )),
-    tip: '当前全站在线人数',
+	label: '在线人数',
+	value: computed(() => h(
+		'span',
+		{ class: 'online-trigger', 'aria-busy': connecting.value },
+		connecting.value ? '连接中…' : h(NumberTransition, { value: Number(liveCount.value) }),
+	)),
+	tip: '当前全站在线人数',
 }
 
 const blogStatsRow1 = [statRuntime, statUpdated]

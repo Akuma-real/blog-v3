@@ -1,4 +1,5 @@
 import { differenceInMilliseconds, format, formatDistanceToNow } from 'date-fns'
+import { toDate } from 'date-fns-tz'
 import { dateLocale } from '~~/blog.config'
 
 function normalizeDate(date?: string | Date) {
@@ -23,8 +24,17 @@ export function getLocaleDatetime(date?: string | Date) {
 	if (!date)
 		return ''
 
-	const normalized = normalizeDate(date)
-	return normalized ? format(normalized, 'yyyy年M月d日 E HH:mm:ss', { locale: dateLocale }) : ''
+	const appConfig = useAppConfig()
+	return toDate(date, { timeZone: appConfig.timezone })
+		.toLocaleString(undefined, {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			weekday: 'long',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+		})
 }
 
 export function getPostDate(date?: string | Date, now: Date | number = new Date()) {
@@ -82,6 +92,16 @@ export function isSameYear(date1?: string | Date, date2?: string | Date) {
 	return normalized1.getFullYear() === normalized2.getFullYear()
 }
 
+const TIME_INTERVALS = [
+	{ label: '世纪', threshold: 1000 * 60 * 60 * 24 * 365.2422 * 100 },
+	{ label: '年', threshold: 1000 * 60 * 60 * 24 * 365.2422 },
+	{ label: '个月', threshold: 1000 * 60 * 60 * 24 * 30.44 },
+	{ label: '天', threshold: 1000 * 60 * 60 * 24 },
+	{ label: '小时', threshold: 1000 * 60 * 60 },
+	{ label: '分', threshold: 1000 * 60 },
+	{ label: '秒', threshold: 1000 },
+]
+
 export function timeElapse(date?: Date | string, maxDepth = 2, now: Date | number = Date.now()) {
 	if (!date)
 		return ''
@@ -91,18 +111,9 @@ export function timeElapse(date?: Date | string, maxDepth = 2, now: Date | numbe
 
 	const baseNow = typeof now === 'number' ? now : now.getTime()
 	const msecPast = baseNow - normalized.getTime()
-	const intervals = [
-		{ label: '世纪', threshold: 1000 * 60 * 60 * 24 * 365.2422 * 100 },
-		{ label: '年', threshold: 1000 * 60 * 60 * 24 * 365.2422 },
-		{ label: '个月', threshold: 1000 * 60 * 60 * 24 * 30.44 },
-		{ label: '天', threshold: 1000 * 60 * 60 * 24 },
-		{ label: '小时', threshold: 1000 * 60 * 60 },
-		{ label: '分', threshold: 1000 * 60 },
-		{ label: '秒', threshold: 1000 },
-	]
 	let timeString = ''
 	let msecRemained = msecPast
-	for (const interval of intervals) {
+	for (const interval of TIME_INTERVALS) {
 		const count = Math.floor(msecRemained / interval.threshold)
 		if (count <= 0)
 			continue
