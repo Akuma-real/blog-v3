@@ -164,6 +164,7 @@ export default defineNuxtConfig({
 	// @keep-sorted
 	modules: [
 		'@nuxt/content',
+		'@nuxt/hints',
 		'@nuxt/icon',
 		'@nuxt/image',
 		'@nuxt/scripts',
@@ -256,6 +257,10 @@ ${packageJson.homepage}
 		domain: blogConfig.url,
 		title: blogConfig.title,
 		description: blogConfig.description,
+	},
+
+	ogImage: {
+		enabled: false,
 	},
 
 	robots: {
