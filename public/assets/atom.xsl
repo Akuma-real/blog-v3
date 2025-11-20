@@ -16,10 +16,10 @@
 		<body>
 			<header class="logo-header">
 				<img class="logo" src="{atom:feed/atom:logo}" alt="" />
-				<div>
+				<span>
 					<h1 class="title"><xsl:value-of select="atom:feed/atom:title" /></h1>
 					<div class="subtitle"><xsl:value-of select="atom:feed/atom:subtitle" /></div>
-				</div>
+				</span>
 			</header>
 
 			<blockquote>

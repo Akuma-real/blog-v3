@@ -27,7 +27,7 @@
 | [月空人](https://whbbit.cn/)                 | Whbbit1999    | v3.4.9       | 项目/博客/Snippets页           |
 | [Mugzx's Blog](https://blog.mugzx.top/)      | Mugzx         | v3.4.9       | 设计风格统一                   |
 | [喵落阁](https://blog-v3.kemeow.top/)        | Kemeow815     | v3.4.7       | 即刻+友圈+最新评论+游戏/番剧页 |
-| [梦爱吃鱼](https://blog.ruom.top/)           | JLinmr        | v3.2-250304  | 即刻+友圈+最新评论             |
+| [梦爱吃鱼](https://blog.bsgun.cn/)           | JLinmr        | v3.2-250304  | 即刻+友圈+最新评论             |
 | [Mikuの极光星](https://blog.sotkg.com/)      | PaloMiku      | v3.4.9       | 设计风格统一，设置面板         |
 | [Shenley的存档点](https://blog.shenley.cn/)  | shenlye       | v3.4.4       | 游戏/番剧页，方形卡片+科技风   |
 | [BiuXin-s Blog](https://zhilu.biuxin.com/)   | damizai       | v3.2-250304  | 即刻+友圈+最新评论             |
@@ -43,6 +43,7 @@
 | [栖童の小站](https://blog.linux-qitong.top/) | Linux-qitong  | v3.4.9       | 即刻+友圈                      |
 | [小源151博客](https://blog.xiaoyuan151.com/) | XiaoYuan151   | v3.4.8       |                                |
 | [墨韵云阁](https://luoyuanxiang.top/)        | luoyuanxiang  | v3.4.8       |                                |
+| [KingKangBlog](https://blog.kingkang.xyz/)   | KingStoning   | v3.4.9       |                                |
 
 ## 特性
 

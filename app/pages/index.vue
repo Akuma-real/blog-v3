@@ -38,13 +38,13 @@ const listRecommended = computed(() => sort(
 
 <div class="post-list">
 	<div class="toolbar">
-		<div>
+		<span>
 			<!-- 外层元素用于占位 -->
 			<ZRawLink to="/preview" class="preview-entrance">
 				<Icon name="ph:file-lock-bold" />
 				查看预览文章
 			</ZRawLink>
-		</div>
+		</span>
 
 		<ZOrderToggle
 			v-model:is-ascending="isAscending"
